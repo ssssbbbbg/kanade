@@ -37,11 +37,11 @@ dev_dependencies:
   leak_tracker_flutter_testing: ^3.0.0
 
 flutter:
-  plugin:
-    platforms:
-      ios:
-        pluginClass: LiquidGlassWidgetsPlugin
-
+  # 注意：这个 vendored 副本没有 ios/ 原生目录，声明 pluginClass 会让
+  # `pod install` 去找 ios/*.podspec 并直接失败。本包实际是纯 Dart + 片元着色器，
+  # 唯一的 MethodChannel（liquid_glass_widgets/reserved_regions）在
+  # lib/src/widgets/surfaces/vertical_bar_regions.dart 里已 catch
+  # MissingPluginException，未注册时降级为空区域，因此不声明原生插件。
   shaders:
     - shaders/lightweight_glass.frag
     - shaders/interactive_indicator.frag
