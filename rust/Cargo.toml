@@ -20,6 +20,7 @@ sha1 = "0.10"
 tokio = { version = "1", features = ["sync", "time", "rt", "macros", "net", "io-util", "fs"] }
 url = "2"
 uuid = { version = "1", features = ["v4"] }
+zeroize = "1"
 tokio-tungstenite = { version = "0.24", features = ["rustls-tls-webpki-roots"] }
 # WebSocket TLS 的 rustls 0.23 需要显式启用加密后端。
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
@@ -27,6 +28,16 @@ futures-util = { version = "0.3.34", default-features = false, features = ["sink
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+
+[target.'cfg(all(target_os = "android", target_arch = "aarch64"))'.dependencies]
+libc = "0.2"
+
+[target.'cfg(any(all(windows, target_arch = "x86_64"), all(target_os = "android", target_arch = "aarch64")))'.dependencies]
+hound = "3.5.1"
+mp4 = "0.14.0"
+
+[target.'cfg(all(windows, target_arch = "x86_64"))'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_LibraryLoader"] }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }

@@ -1,0 +1,7 @@
+    .section .rodata.kanade_nac_model,"a",%progbits
+    .balign 16
+    .global kanade_nac_model
+    .hidden kanade_nac_model
+kanade_nac_model:
+    .incbin "@KANADE_NAC_MODEL@"
+    .section .note.GNU-stack,"",%progbits

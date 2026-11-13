@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 这两个图标只在 Dart 里按名字引用（媒体卡片的红心按钮），release 打包时别被当成没用的资源删掉 -->
+<!-- 这些图标只在 Dart 里按名字引用（通知小图标、媒体卡片的红心和播放模式按钮），release 打包时别被当成没用的资源删掉 -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/ic_like,@drawable/ic_liked" />
+    tools:keep="@drawable/ic_notification,@drawable/ic_like,@drawable/ic_liked,@drawable/ic_mode_sequence,@drawable/ic_mode_repeat_one,@drawable/ic_mode_shuffle" />

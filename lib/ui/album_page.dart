@@ -20,14 +20,16 @@ class AlbumPage extends StatelessWidget {
   final String mid;
   final String name;
 
-  static Route<void> route(String mid, String name) => keyedPage('album:$mid', (_) => AlbumPage(mid: mid, name: name));
+  static Route<void> route(String mid, String name) =>
+      keyedPage('album:$mid', (_) => AlbumPage(mid: mid, name: name));
 
   @override
   Widget build(BuildContext context) {
     return GlassBackScaffold(
       body: AsyncView<AlbumDetail>(
         load: () => api.getAlbumDetail(mid: mid),
-        builder: (context, d) => SmoothScroll(builder: (context, scroll) => _Body(d, scroll)),
+        builder: (context, d) =>
+            SmoothScroll(builder: (context, scroll) => _Body(d, scroll)),
       ),
     );
   }
@@ -92,13 +94,24 @@ class _Head extends StatelessWidget {
     final grey = TextStyle(fontSize: 13, color: scheme.onSurfaceVariant);
     // 和歌单详情同一种头部：居中大封面 + 标题 + 一排按钮
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, GlassBackScaffold.topInset, 24, 12),
+      padding: const EdgeInsets.fromLTRB(
+        24,
+        GlassBackScaffold.topInset,
+        24,
+        12,
+      ),
       child: Column(
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 40, offset: Offset(0, 20))],
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black54,
+                  blurRadius: 40,
+                  offset: Offset(0, 20),
+                ),
+              ],
             ),
             child: Cover(d.coverUrl, size: 196, radius: 20),
           ),
@@ -117,14 +130,26 @@ class _Head extends StatelessWidget {
             children: [
               for (final s in d.singers)
                 InkWell(
-                  onTap: s.mid.isEmpty ? null : () => openPage(context, SingerPage.route(s.mid, s.name)),
-                  child: Text(s.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                  onTap: s.mid.isEmpty
+                      ? null
+                      : () =>
+                            openPage(context, SingerPage.route(s.mid, s.name)),
+                  child: Text(
+                    s.name,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
-            [if (d.publishDate.isNotEmpty) l.publishedOn(d.publishDate), d.company].where((s) => s.isNotEmpty).join(' · '),
+            [
+              if (d.publishDate.isNotEmpty) l.publishedOn(d.publishDate),
+              d.company,
+            ].where((s) => s.isNotEmpty).join(' · '),
             style: grey,
           ),
           if (d.description.isNotEmpty) ...[
@@ -143,7 +168,12 @@ class _Head extends StatelessWidget {
               Expanded(
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(minimumSize: const Size(0, 46)),
-                  onPressed: d.songs.isEmpty ? null : () => context.read<PlayerController>().playList(d.songs, 0),
+                  onPressed: d.songs.isEmpty
+                      ? null
+                      : () => context.read<PlayerController>().playList(
+                          d.songs,
+                          0,
+                        ),
                   icon: const Icon(Icons.play_arrow_rounded),
                   label: Text(l.playAll(d.songs.length)),
                 ),
@@ -156,7 +186,9 @@ class _Head extends StatelessWidget {
                   backgroundColor: scheme.surfaceContainerHigh,
                   side: BorderSide(color: scheme.outlineVariant),
                 ),
-                onPressed: d.id == 0 ? null : () => Navigator.of(context).push(CommentsPage.album(d)),
+                onPressed: d.id == 0
+                    ? null
+                    : () => Navigator.of(context).push(CommentsPage.album(d)),
                 icon: const Icon(Icons.comment_outlined),
               ),
             ],

@@ -1,0 +1,9 @@
+.section .rodata
+.global kanade_dts_config
+.hidden kanade_dts_config
+kanade_dts_config:
+.incbin "@config@"
+.global kanade_dts_license
+.hidden kanade_dts_license
+kanade_dts_license:
+.incbin "@license@"

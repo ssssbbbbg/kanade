@@ -168,15 +168,27 @@ class _AsyncViewState<T> extends State<AsyncView<T>> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(l.loadFailed(errorText(l, snap.error!)), textAlign: TextAlign.center),
+                Text(
+                  l.loadFailed(errorText(l, snap.error!)),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 12),
-                FilledButton.tonal(onPressed: () => setState(() { _future = widget.load(); _since.reset(); }), child: Text(l.retry)),
+                FilledButton.tonal(
+                  onPressed: () => setState(() {
+                    _future = widget.load();
+                    _since.reset();
+                  }),
+                  child: Text(l.retry),
+                ),
               ],
             ),
           );
         }
         if (!snap.hasData) return const PageLoading();
-        return _FadeIn(enabled: _since.elapsed > PageLoading.delay, child: widget.builder(context, snap.data as T));
+        return _FadeIn(
+          enabled: _since.elapsed > PageLoading.delay,
+          child: widget.builder(context, snap.data as T),
+        );
       },
     );
   }
@@ -193,8 +205,12 @@ class PageLoading extends StatefulWidget {
   State<PageLoading> createState() => _PageLoadingState();
 }
 
-class _PageLoadingState extends State<PageLoading> with SingleTickerProviderStateMixin {
-  late final _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+class _PageLoadingState extends State<PageLoading>
+    with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
   late final Timer _timer;
   bool _shown = false;
 
@@ -237,8 +253,18 @@ class _PageLoadingState extends State<PageLoading> with SingleTickerProviderStat
                       Container(
                         width: 5,
                         // 五根依次错开五分之一个周期，像一道波
-                        height: 6 + 24 * (0.5 - 0.5 * math.cos((_c.value - i / 5) * 2 * math.pi)),
-                        decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(3)),
+                        height:
+                            6 +
+                            24 *
+                                (0.5 -
+                                    0.5 *
+                                        math.cos(
+                                          (_c.value - i / 5) * 2 * math.pi,
+                                        )),
+                        decoration: BoxDecoration(
+                          color: scheme.primary,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
                       ),
                     ],
                   ],
@@ -282,7 +308,8 @@ class _FadeInState extends State<_FadeIn> with SingleTickerProviderStateMixin {
   }
 
   @override
-  Widget build(BuildContext context) => FadeTransition(opacity: _c, child: widget.child);
+  Widget build(BuildContext context) =>
+      FadeTransition(opacity: _c, child: widget.child);
 }
 
 /// 页面里的区块标题，右侧可选一个“全部”。
@@ -320,7 +347,9 @@ class SectionHeader extends StatelessWidget {
           if (onMore != null)
             TextButton(
               onPressed: onMore,
-              style: TextButton.styleFrom(foregroundColor: scheme.onSurfaceVariant),
+              style: TextButton.styleFrom(
+                foregroundColor: scheme.onSurfaceVariant,
+              ),
               child: Text(AppLocalizations.of(context).seeAll),
             ),
           if (onRefresh != null) RefreshIconButton(onRefresh!),
@@ -340,8 +369,12 @@ class RefreshIconButton extends StatefulWidget {
   State<RefreshIconButton> createState() => _RefreshIconButtonState();
 }
 
-class _RefreshIconButtonState extends State<RefreshIconButton> with SingleTickerProviderStateMixin {
-  late final _spin = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+class _RefreshIconButtonState extends State<RefreshIconButton>
+    with SingleTickerProviderStateMixin {
+  late final _spin = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 800),
+  );
   var _busy = false;
 
   @override
@@ -377,12 +410,20 @@ class BottomSpacer extends StatelessWidget {
   const BottomSpacer({super.key});
 
   @override
-  Widget build(BuildContext context) => SizedBox(height: MediaQuery.paddingOf(context).bottom + 16);
+  Widget build(BuildContext context) =>
+      SizedBox(height: MediaQuery.paddingOf(context).bottom + 16);
 }
 
 /// 切换用的小胶囊：选中是白底黑字，没选中是描边。
 class Pill extends StatelessWidget {
-  const Pill({super.key, required this.label, required this.selected, required this.onTap, this.large = false});
+  const Pill({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.large = false,
+    this.small = false,
+  });
 
   final String label;
   final bool selected;
@@ -391,25 +432,47 @@ class Pill extends StatelessWidget {
   /// 页面顶上那种大一号的。
   final bool large;
 
+  /// 分类栏下面的二级筛选：小一号、没有描边，选中是深灰底。
+  final bool small;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final Color fill;
+    final Color text;
+    if (small) {
+      fill = selected ? scheme.surfaceContainerHighest : Colors.transparent;
+      text = selected ? scheme.onSurface : scheme.onSurfaceVariant;
+    } else {
+      fill = selected ? scheme.secondaryContainer : Colors.transparent;
+      text = selected ? scheme.onSecondaryContainer : scheme.onSurfaceVariant;
+    }
     return Material(
-      color: selected ? scheme.secondaryContainer : Colors.transparent,
-      shape: StadiumBorder(side: selected ? BorderSide.none : BorderSide(color: scheme.outlineVariant)),
+      color: fill,
+      shape: StadiumBorder(
+        side: selected || small
+            ? BorderSide.none
+            : BorderSide(color: scheme.outlineVariant),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
           padding: large
               ? const EdgeInsets.symmetric(horizontal: 18, vertical: 8)
+              : small
+              ? const EdgeInsets.symmetric(horizontal: 11, vertical: 5)
               : const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           child: Text(
             label,
             style: TextStyle(
-              fontSize: large ? 15 : 13,
+              fontSize: large
+                  ? 15
+                  : small
+                  ? 12
+                  : 13,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-              color: selected ? scheme.onSecondaryContainer : scheme.onSurfaceVariant,
+              color: text,
             ),
           ),
         ),
@@ -418,9 +481,63 @@ class Pill extends StatelessWidget {
   }
 }
 
+/// 页面里的一级分类：纯文字，选中的变白，下面一条柠檬绿短线。
+class UnderlineTab extends StatelessWidget {
+  const UnderlineTab({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                color: selected ? scheme.onSurface : scheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              width: 16,
+              height: 3,
+              decoration: BoxDecoration(
+                color: selected ? scheme.primary : Colors.transparent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// 方形封面 + 标题的歌单卡片，播放量放在左上角的小胶囊里。
 class PlaylistCard extends StatelessWidget {
-  const PlaylistCard({super.key, required this.title, required this.coverUrl, this.badge, required this.onTap});
+  const PlaylistCard({
+    super.key,
+    required this.title,
+    required this.coverUrl,
+    this.badge,
+    required this.onTap,
+  });
 
   final String title;
   final String coverUrl;
@@ -446,11 +563,21 @@ class PlaylistCard extends StatelessWidget {
                     left: 8,
                     top: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(99)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black45,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
                       child: Text(
                         badge!,
-                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -462,7 +589,11 @@ class PlaylistCard extends StatelessWidget {
             title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, height: 1.35),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              height: 1.35,
+            ),
           ),
         ],
       ),
@@ -485,7 +616,9 @@ class QualityBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         color: filled ? scheme.primary : null,
-        border: filled ? null : Border.all(color: scheme.onSurfaceVariant.withValues(alpha: 0.6)),
+        border: filled
+            ? null
+            : Border.all(color: scheme.onSurfaceVariant.withValues(alpha: 0.6)),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
@@ -512,8 +645,12 @@ class PlayingBars extends StatefulWidget {
   State<PlayingBars> createState() => _PlayingBarsState();
 }
 
-class _PlayingBarsState extends State<PlayingBars> with SingleTickerProviderStateMixin {
-  late final _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+class _PlayingBarsState extends State<PlayingBars>
+    with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
 
   @override
   void initState() {
@@ -553,8 +690,15 @@ class _PlayingBarsState extends State<PlayingBars> with SingleTickerProviderStat
               Container(
                 width: 3,
                 // 三根错开三分之一个周期
-                height: 4 + 11 * (0.5 + 0.5 * math.sin((_c.value + i / 3) * 2 * math.pi)),
-                decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+                height:
+                    4 +
+                    11 *
+                        (0.5 +
+                            0.5 * math.sin((_c.value + i / 3) * 2 * math.pi)),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
           ],
         ),
@@ -565,4 +709,7 @@ class _PlayingBarsState extends State<PlayingBars> with SingleTickerProviderStat
 
 /// 手机上才有的交互：左右滑切歌、滚动时收成圆球。
 /// 跟着 defaultTargetPlatform 走，测试里可以在桌面上模拟手机。
-bool get touchPlatform => const {TargetPlatform.android, TargetPlatform.iOS}.contains(defaultTargetPlatform);
+bool get touchPlatform => const {
+  TargetPlatform.android,
+  TargetPlatform.iOS,
+}.contains(defaultTargetPlatform);

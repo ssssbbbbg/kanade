@@ -16,13 +16,15 @@ class PlayerBarPage extends StatefulWidget {
   /// 里面的第一个页面。
   final Route<void> first;
 
-  static Route<void> route(Route<void> first) => MaterialPageRoute(builder: (_) => PlayerBarPage(first: first));
+  static Route<void> route(Route<void> first) =>
+      MaterialPageRoute(builder: (_) => PlayerBarPage(first: first));
 
   @override
   State<PlayerBarPage> createState() => _PlayerBarPageState();
 }
 
-class _PlayerBarPageState extends State<PlayerBarPage> with SingleTickerProviderStateMixin {
+class _PlayerBarPageState extends State<PlayerBarPage>
+    with SingleTickerProviderStateMixin {
   static _PlayerBarPageState? _open;
 
   final _nav = GlobalKey<NavigatorState>();
@@ -48,8 +50,14 @@ class _PlayerBarPageState extends State<PlayerBarPage> with SingleTickerProvider
   final _miniAnchor = MiniPlayer.newAnchor();
   final _desktopAnchor = DesktopPlayerBar.newAnchor();
 
-  late final _rise = AnimationController(vsync: this, duration: const Duration(milliseconds: 520))..forward();
-  late final _offset = CurvedAnimation(parent: _rise, curve: Curves.easeOutBack);
+  late final _rise = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 520),
+  )..forward();
+  late final _offset = CurvedAnimation(
+    parent: _rise,
+    curve: Curves.easeOutBack,
+  );
 
   @override
   void dispose() {
@@ -93,11 +101,16 @@ class _PlayerBarPageState extends State<PlayerBarPage> with SingleTickerProvider
               Positioned.fill(
                 // 播放条的玻璃长成播放页时会变高，这段时间截到它最高长到的地方
                 child: ValueListenableBuilder(
-                  valueListenable: (wide ? _desktopAnchor : _miniAnchor).growing,
+                  valueListenable:
+                      (wide ? _desktopAnchor : _miniAnchor).growing,
                   builder: (_, growing, child) => KanadeGlass.backdropSource(
                     captureBounds: (size) => Rect.fromLTRB(
                       0,
-                      (size.height - barBottom - barHeight) * (growing == null ? 1 : 1 - PlayerMorph.glassUntil) - 32,
+                      (size.height - barBottom - barHeight) *
+                              (growing == null
+                                  ? 1
+                                  : 1 - PlayerMorph.glassUntil) -
+                          32,
                       size.width,
                       size.height,
                     ),
@@ -105,8 +118,15 @@ class _PlayerBarPageState extends State<PlayerBarPage> with SingleTickerProvider
                   ),
                   child: MediaQuery(
                     // 播放条浮在内容上面，列表滚到底时最后一项不被它挡住
-                    data: mq.copyWith(padding: mq.padding.copyWith(bottom: mq.padding.bottom + barSpace)),
-                    child: Navigator(key: _nav, onGenerateInitialRoutes: (_, _) => [widget.first]),
+                    data: mq.copyWith(
+                      padding: mq.padding.copyWith(
+                        bottom: mq.padding.bottom + barSpace,
+                      ),
+                    ),
+                    child: Navigator(
+                      key: _nav,
+                      onGenerateInitialRoutes: (_, _) => [widget.first],
+                    ),
                   ),
                 ),
               ),
@@ -118,7 +138,10 @@ class _PlayerBarPageState extends State<PlayerBarPage> with SingleTickerProvider
                   animation: _offset,
                   child: bar,
                   builder: (_, bar) => Transform.translate(
-                    offset: Offset(0, (1 - _offset.value) * (barHeight + barBottom + 16)),
+                    offset: Offset(
+                      0,
+                      (1 - _offset.value) * (barHeight + barBottom + 16),
+                    ),
                     child: bar,
                   ),
                 ),

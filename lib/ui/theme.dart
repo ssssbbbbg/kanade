@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 /// 全应用唯一的配色：黑白灰 + 柠檬绿抗色，不随封面变，也不给用户改。
-/// 抗色只用在播放按钮、进度条、正在播放、红心、VIP 上；选中态用白底黑字。
+/// 抗色只用在播放按钮、进度条、正在播放、红心、VIP、分类下划线上；选中态用白底黑字。
 abstract final class KanadeColors {
   static const lime = Color(0xFFD4FF3A);
 
@@ -84,9 +84,17 @@ ThemeData buildTheme(Brightness b) {
       backgroundColor: scheme.surface,
       surfaceTintColor: Colors.transparent,
       scrolledUnderElevation: 0,
-      titleTextStyle: TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: scheme.onSurface),
+      titleTextStyle: TextStyle(
+        fontSize: 19,
+        fontWeight: FontWeight.w700,
+        color: scheme.onSurface,
+      ),
     ),
-    dividerTheme: DividerThemeData(color: scheme.outlineVariant, space: 1, thickness: 1),
+    dividerTheme: DividerThemeData(
+      color: scheme.outlineVariant,
+      space: 1,
+      thickness: 1,
+    ),
     cardTheme: CardThemeData(
       color: scheme.surfaceContainer,
       elevation: 0,
@@ -102,13 +110,24 @@ ThemeData buildTheme(Brightness b) {
       shape: const StadiumBorder(),
       side: BorderSide(color: scheme.outlineVariant),
       selectedColor: scheme.secondaryContainer,
-      labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: scheme.onSurface),
-      secondaryLabelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: scheme.onSecondaryContainer),
+      labelStyle: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: scheme.onSurface,
+      ),
+      secondaryLabelStyle: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: scheme.onSecondaryContainer,
+      ),
       showCheckmark: false,
     ),
     listTileTheme: ListTileThemeData(
       iconColor: scheme.onSurfaceVariant,
-      subtitleTextStyle: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+      subtitleTextStyle: TextStyle(
+        fontSize: 13,
+        color: scheme.onSurfaceVariant,
+      ),
     ),
     navigationRailTheme: NavigationRailThemeData(
       backgroundColor: scheme.surface,
@@ -124,7 +143,10 @@ ThemeData buildTheme(Brightness b) {
     progressIndicatorTheme: ProgressIndicatorThemeData(color: scheme.primary),
     // 二级页面从右边推进来，旧页面往左让一点；手机上从左边缘右滑能返回
     pageTransitionsTheme: PageTransitionsTheme(
-      builders: {for (final p in TargetPlatform.values) p: const CupertinoPageTransitionsBuilder()},
+      builders: {
+        for (final p in TargetPlatform.values)
+          p: const CupertinoPageTransitionsBuilder(),
+      },
     ),
   );
 }

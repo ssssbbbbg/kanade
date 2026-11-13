@@ -5,9 +5,14 @@ class _RemotePlayerController extends PlayerController {
     super.auth,
     this._library,
     this._locale,
-    String directory,
-  ) : super._remote() {
-    _connection = AndroidPlaybackConnection(directory, _applyUpdate);
+    String directory, {
+    AndroidPlaybackConnection Function(String, void Function(PlaybackMessage))?
+    connectionFactory,
+  }) : super._() {
+    _connection = (connectionFactory ?? AndroidPlaybackConnection.new)(
+      directory,
+      _applyUpdate,
+    );
     _lifecycle = AppLifecycleListener(
       onResume: _connect,
       onPause: () => _connection.setWatching(false),
@@ -44,7 +49,6 @@ class _RemotePlayerController extends PlayerController {
   }
 
   void _syncAuth() {
-    _onAuthChanged();
     _lastLike = null;
     _ignore(_connection.call('auth'));
   }
@@ -58,9 +62,7 @@ class _RemotePlayerController extends PlayerController {
     final key = (song.mid, liked);
     if (_lastLike == key) return;
     _lastLike = key;
-    _ignore(
-      _connection.call('like', [PlayerSessionStore.songToJson(song), liked]),
-    );
+    _ignore(_connection.call('like', [songToJson(song), liked]));
   }
 
   void _applyUpdate(PlaybackMessage message) {
@@ -71,10 +73,7 @@ class _RemotePlayerController extends PlayerController {
     }
     final before = current?.mid;
     if (message['queue'] case final List<Object?> items) {
-      queue = items
-          .cast<Map<String, dynamic>>()
-          .map(PlayerSessionStore.songFromJson)
-          .toList();
+      queue = items.cast<Map<String, dynamic>>().map(songFromJson).toList();
     }
     index = message['index'] as int;
     playing = message['playing'] as bool;
@@ -93,15 +92,11 @@ class _RemotePlayerController extends PlayerController {
     };
     sleepAfterSong = message['sleepAfterSong'] as bool;
     error = decodePlayerError(message['error']);
+    if (before != current?.mid) _refreshDisplayMetadata();
     if (current case final song?) {
       if (message['liked'] case final bool liked) {
         _lastLike = (song.mid, liked);
         _library.updateLiked(song, liked);
-      }
-      if (before != song.mid) {
-        lyric = null;
-        unawaited(refreshQualities());
-        _loadLyric(song, ++_token);
       }
     }
     notifyListeners();
@@ -112,7 +107,7 @@ class _RemotePlayerController extends PlayerController {
   }
 
   static List<Map<String, Object?>> _songs(List<Song> songs) =>
-      songs.map(PlayerSessionStore.songToJson).toList();
+      songs.map(songToJson).toList();
 
   @override
   Future<void> playList(List<Song> songs, int start) =>
@@ -127,13 +122,41 @@ class _RemotePlayerController extends PlayerController {
   @override
   PlayNextResult playNext(Song song) {
     if (current?.mid == song.mid) return PlayNextResult.current;
-    _ignore(_send('playNext', PlayerSessionStore.songToJson(song)));
+    _ignore(_send('playNext', songToJson(song)));
     return current == null ? PlayNextResult.started : PlayNextResult.queued;
   }
 
   @override
-  Future<void> playAt(int i, {int skipped = 0, int pinnedNext = 0}) =>
-      _send('playAt', i);
+  Future<void> playAt(int i) => _send('playAt', i);
+
+  // 删除和挪动先改界面这边的队列，拖完松手列表不会先弹回原位再等播放服务的快照
+  @override
+  Future<void> removeAt(int i) {
+    if (i < 0 || i >= queue.length) return Future.value();
+    final before = current?.mid;
+    final (q, n) = removeFromQueue(queue, index, i);
+    queue = q;
+    index = n;
+    if (before != current?.mid) _refreshDisplayMetadata();
+    notifyListeners();
+    return _send('removeAt', i);
+  }
+
+  @override
+  void moveQueue(int from, int to) {
+    if (from == to ||
+        from < 0 ||
+        from >= queue.length ||
+        to < 0 ||
+        to >= queue.length) {
+      return;
+    }
+    final (q, n) = moveInQueue(queue, index, from, to);
+    queue = q;
+    index = n;
+    notifyListeners();
+    _ignore(_send('moveQueue', [from, to]));
+  }
 
   @override
   Future<void> next() => _send('next');

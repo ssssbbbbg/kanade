@@ -11,6 +11,7 @@ import '../l10n/l10n_ext.dart';
 import '../player/player_controller.dart';
 import '../src/rust/api/types.dart';
 import 'glass.dart';
+import 'play_pause_button.dart';
 import 'player_background.dart';
 import 'player_route.dart';
 import 'widgets.dart';
@@ -43,7 +44,8 @@ class MiniPlayer extends StatefulWidget {
   /// 另外摆一条播放条时（比如从播放页进的歌手页）给它自己的锚点。
   static PlayerBarAnchor newAnchor() => PlayerBarAnchor(
     coverRadius: _coverSize / 2,
-    face: (_) => const Material(type: MaterialType.transparency, child: _MiniFace()),
+    face: (_) =>
+        const Material(type: MaterialType.transparency, child: _MiniFace()),
   );
 
   /// 不给就是 [MiniPlayer.anchor]。
@@ -89,15 +91,27 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
     final next = dx < -56 || v < -500;
     final previous = !next && (dx > 56 || v > 500);
     if (!next && !previous) {
-      await _swipe.animateTo(0, duration: const Duration(milliseconds: 260), curve: Curves.easeOutCubic);
+      await _swipe.animateTo(
+        0,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+      );
       return;
     }
     unawaited(next ? p.next() : p.previous());
     const out = 140.0;
-    await _swipe.animateTo(next ? -out : out, duration: const Duration(milliseconds: 140), curve: Curves.easeIn);
+    await _swipe.animateTo(
+      next ? -out : out,
+      duration: const Duration(milliseconds: 140),
+      curve: Curves.easeIn,
+    );
     if (!mounted) return;
     _swipe.value = next ? out : -out;
-    await _swipe.animateTo(0, duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+    await _swipe.animateTo(
+      0,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -110,9 +124,13 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
     final bar = GestureDetector(
       key: _anchor.barKey,
       behavior: HitTestBehavior.opaque,
-      onTap: round ? widget.onExpand : () => PlayerRoute.open(context, anchor: _anchor),
+      onTap: round
+          ? widget.onExpand
+          : () => PlayerRoute.open(context, anchor: _anchor),
       onVerticalDragUpdate: round ? null : (d) => _drag.update(context, d),
-      onVerticalDragEnd: round ? null : (d) => _drag.end(context, d.velocity.pixelsPerSecond.dy),
+      onVerticalDragEnd: round
+          ? null
+          : (d) => _drag.end(context, d.velocity.pixelsPerSecond.dy),
       onVerticalDragCancel: round ? null : () => _drag.end(context, 0),
       onHorizontalDragStart: swipe ? (_) => _swipe.stop() : null,
       onHorizontalDragUpdate: swipe ? (d) => _swipe.value += d.delta.dx : null,
@@ -146,7 +164,11 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
                   ),
                 Positioned(
                   // 封面平时待在左端的半圆里，收成圆时是右边缩进来
-                  left: lerpDouble((h - d) / 2, w - (h + d) / 2, widget.coverShift),
+                  left: lerpDouble(
+                    (h - d) / 2,
+                    w - (h + d) / 2,
+                    widget.coverShift,
+                  ),
                   top: (h - d) / 2,
                   width: d,
                   height: d,
@@ -167,8 +189,13 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
           return PlayerBarGrowth(
             anchor: _anchor,
             builder: (growing, shapeT) {
-              final shape = LiquidRoundedRectangle(borderRadius: PlayerMorph.radiusAt(math.min(w, h), shapeT));
-              final inner = Opacity(opacity: growing ? 0 : 1, child: PlayerBarGrowth.pin(content));
+              final shape = LiquidRoundedRectangle(
+                borderRadius: PlayerMorph.radiusAt(math.min(w, h), shapeT),
+              );
+              final inner = Opacity(
+                opacity: growing ? 0 : 1,
+                child: PlayerBarGrowth.pin(content),
+              );
               if (!widget.grouped) {
                 return GlassContainer(
                   useOwnLayer: true,
@@ -202,7 +229,10 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
     return ListenableBuilder(
       listenable: _visibility,
       child: bar,
-      builder: (_, bar) => Opacity(opacity: _anchor.hidden.value && _anchor.growing.value == null ? 0 : 1, child: bar),
+      builder: (_, bar) => Opacity(
+        opacity: _anchor.hidden.value && _anchor.growing.value == null ? 0 : 1,
+        child: bar,
+      ),
     );
   }
 }
@@ -223,13 +253,20 @@ class _MiniFace extends StatelessWidget {
     if (song == null) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
     final reveal = this.reveal;
-    final titleIn = reveal == null ? 1.0 : const Interval(0, 0.7).transform(reveal.clamp(0.0, 1.0));
-    final buttonsIn = reveal == null ? 1.0 : const Interval(0.3, 1).transform(reveal.clamp(0.0, 1.0));
+    final titleIn = reveal == null
+        ? 1.0
+        : const Interval(0, 0.7).transform(reveal.clamp(0.0, 1.0));
+    final buttonsIn = reveal == null
+        ? 1.0
+        : const Interval(0.3, 1).transform(reveal.clamp(0.0, 1.0));
     Widget pop(Widget button) => buttonsIn >= 1
         ? button
         : Opacity(
             opacity: buttonsIn,
-            child: Transform.scale(scale: 0.6 + 0.4 * Curves.easeOutBack.transform(buttonsIn), child: button),
+            child: Transform.scale(
+              scale: 0.6 + 0.4 * Curves.easeOutBack.transform(buttonsIn),
+              child: button,
+            ),
           );
     Widget title = Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -242,10 +279,15 @@ class _MiniFace extends StatelessWidget {
           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
         Text(
-          p.error == null ? singerNames(song) : playerErrorText(AppLocalizations.of(context), p.error!),
+          p.error == null
+              ? singerNames(song)
+              : playerErrorText(AppLocalizations.of(context), p.error!),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontSize: 12, color: p.error != null ? scheme.error : scheme.onSurfaceVariant),
+          style: TextStyle(
+            fontSize: 12,
+            color: p.error != null ? scheme.error : scheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -257,7 +299,10 @@ class _MiniFace extends StatelessWidget {
           child: title,
           builder: (_, title) => Transform.translate(
             offset: Offset(swipe.value, 0),
-            child: Opacity(opacity: (1 - swipe.value.abs() / 140).clamp(0.0, 1.0), child: title),
+            child: Opacity(
+              opacity: (1 - swipe.value.abs() / 140).clamp(0.0, 1.0),
+              child: title,
+            ),
           ),
         ),
       );
@@ -265,7 +310,10 @@ class _MiniFace extends StatelessWidget {
     if (titleIn < 1) {
       title = Opacity(
         opacity: titleIn,
-        child: Transform.translate(offset: Offset((1 - titleIn) * -10, 0), child: title),
+        child: Transform.translate(
+          offset: Offset((1 - titleIn) * -10, 0),
+          child: title,
+        ),
       );
     }
     return Stack(
@@ -278,23 +326,18 @@ class _MiniFace extends StatelessWidget {
               pop(
                 IconButton(
                   onPressed: p.previous,
-                  icon: Icon(Icons.skip_previous_rounded, color: scheme.onSurface),
+                  icon: Icon(
+                    Icons.skip_previous_rounded,
+                    color: scheme.onSurface,
+                  ),
                 ),
               ),
             pop(
-              SizedBox.square(
+              PlayPauseButton(
                 dimension: 40,
-                child: p.loading || p.buffering
-                    ? Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
-                      )
-                    : IconButton.filled(
-                        padding: EdgeInsets.zero,
-                        onPressed: p.toggle,
-                        // 玻璃层会改写继承的图标颜色，这里显式指定
-                        icon: Icon(p.playing ? Icons.pause_rounded : Icons.play_arrow_rounded, color: scheme.onPrimary),
-                      ),
+                playing: p.playing,
+                loading: p.loading || p.buffering,
+                onPressed: p.toggle,
               ),
             ),
             if (!touchPlatform)
@@ -323,7 +366,10 @@ class _MiniFace extends StatelessWidget {
                   backgroundColor: scheme.onSurface.withValues(alpha: 0.12),
                   value: p.duration.inMilliseconds == 0
                       ? 0
-                      : (pos.inMilliseconds / p.duration.inMilliseconds).clamp(0.0, 1.0),
+                      : (pos.inMilliseconds / p.duration.inMilliseconds).clamp(
+                          0.0,
+                          1.0,
+                        ),
                 ),
               ),
             ),

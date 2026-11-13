@@ -113,7 +113,7 @@ class GlassDropdownState<T> extends State<GlassDropdown<T>>
   /// 不用 visibility：它在 Windows 上靠外面套一层 Opacity，第一次用要现编 shader，实测卡 100ms。
   /// 这些都只是 shader 的参数，不会多出新的变体。blur 不动，它一变绘制方式就变；
   /// 按钮背后是纯色的卡片，模糊了也看不出来。
-  static LiquidGlassSettings _dissolve(LiquidGlassSettings s, double t) {
+  static LiquidGlassSettings dissolve(LiquidGlassSettings s, double t) {
     if (t == 0) return s;
     final k = 1 - t;
     return s.copyWith(
@@ -404,7 +404,7 @@ class GlassDropdownState<T> extends State<GlassDropdown<T>>
               height: b - t,
               child: GlassContainer(
                 useOwnLayer: true,
-                settings: _dissolve(settings, _fade.value),
+                settings: dissolve(settings, _fade.value),
                 quality: KanadeGlass.navigationQuality,
                 shape: const LiquidRoundedRectangle(borderRadius: _radius),
                 clipBehavior: Clip.antiAlias,

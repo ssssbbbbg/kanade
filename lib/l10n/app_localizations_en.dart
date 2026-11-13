@@ -244,9 +244,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qualityAiCodec => 'AI audio';
 
   @override
-  String get qualityVinyl => 'Vinyl';
-
-  @override
   String get reasonUnsupported => 'format not supported by the player';
 
   @override
@@ -410,6 +407,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get queue => 'Queue';
 
   @override
+  String get removeFromQueue => 'Remove from queue';
+
+  @override
+  String get reorderQueue => 'Drag to reorder';
+
+  @override
   String playbackError(String error) {
     return 'Playback error: $error';
   }
@@ -530,25 +533,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comments => 'Comments';
 
   @override
-  String get hotComments => 'Top comments';
-
-  @override
-  String get latestComments => 'Latest comments';
-
-  @override
-  String commentTotal(int count) {
-    return '$count comments';
-  }
+  String get commentsRecommended => 'Recommended';
 
   @override
   String get noComments => 'No comments yet';
 
   @override
+  String commentCount(String count) {
+    return '$count comments';
+  }
+
+  @override
+  String get timeJustNow => 'Just now';
+
+  @override
+  String timeMinutesAgo(int count) {
+    return '$count min ago';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    return '$count h ago';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    return '$count d ago';
+  }
+
+  @override
   String get replies => 'Replies';
 
   @override
-  String viewReplies(int count) {
-    return 'View $count replies';
+  String replyCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count replies',
+      one: '1 reply',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -634,10 +658,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Falls back to a lower quality when unavailable or unplayable';
 
   @override
-  String get songFade => 'Fade between songs';
+  String get songFade => 'Playback transition';
 
   @override
-  String get songFadeHint => 'Fades out the current song and fades in the next';
+  String get songFadeHint =>
+      'Fades volume when switching songs, pausing and resuming';
 
   @override
   String get songFadeOff => 'Off';
@@ -690,6 +715,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logoutConfirm => 'Log out?';
+
+  @override
+  String get sessionEndedTitle => 'You\'ve been logged out';
+
+  @override
+  String get sessionExpired =>
+      'Your login expired, so you were logged out. Log in again to keep syncing playlists and playing VIP songs.';
+
+  @override
+  String get sessionRevoked =>
+      'QQ Music ended your login before it expired, so you were logged out.';
+
+  @override
+  String get sessionRejected =>
+      'QQ Music no longer accepts this login, so you were logged out.';
+
+  @override
+  String get sessionCausesTitle => 'Possible causes';
+
+  @override
+  String get sessionCauseOtherDevice =>
+      'Your account logged in on another device and replaced this one';
+
+  @override
+  String get sessionCauseDeviceRemoved =>
+      'This device was removed in QQ Music\'s device management';
+
+  @override
+  String get sessionCausePassword => 'The account password was changed';
+
+  @override
+  String get sessionCauseExpired => 'The login passed its expiry time';
+
+  @override
+  String get loginAgain => 'Log in again';
+
+  @override
+  String get later => 'Later';
 
   @override
   String get ok => 'OK';
@@ -973,4 +1036,120 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sleepTimerOff => 'Turn off timer';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get settingsAbout => 'About';
+
+  @override
+  String get checkUpdate => 'Check for updates';
+
+  @override
+  String currentVersion(String version) {
+    return 'Current version $version';
+  }
+
+  @override
+  String get updateChecking => 'Checking…';
+
+  @override
+  String get upToDate => 'Up to date';
+
+  @override
+  String get updateCheckFailed =>
+      'Couldn\'t check for updates. Try again later.';
+
+  @override
+  String get updatePreview => 'Get preview updates';
+
+  @override
+  String get updatePreviewHint =>
+      'Also notify about beta versions, which may be unstable';
+
+  @override
+  String get updateMirror => 'Download updates through a mirror';
+
+  @override
+  String get updateMirrorHint =>
+      'Skips GitHub entirely and uses mirrors instead';
+
+  @override
+  String updateAvailable(String version) {
+    return '$version is available';
+  }
+
+  @override
+  String get updatePreviewBadge => 'Preview';
+
+  @override
+  String updateCurrent(String version) {
+    return 'Current $version';
+  }
+
+  @override
+  String updateDate(String date) {
+    return 'Released $date';
+  }
+
+  @override
+  String get updateInstaller => 'Installer';
+
+  @override
+  String get updateInstallerHint =>
+      'Runs the installer over the current version';
+
+  @override
+  String get updateArchive => 'Zip archive';
+
+  @override
+  String get updateArchiveHint => 'Replaces the files after the app quits';
+
+  @override
+  String get updateNow => 'Update now';
+
+  @override
+  String get updateSkip => 'Skip this version';
+
+  @override
+  String updateDownloading(String version) {
+    return 'Downloading $version';
+  }
+
+  @override
+  String get updateDownloadingHint =>
+      'It will be verified and installed when done';
+
+  @override
+  String get updateConnecting => 'Connecting…';
+
+  @override
+  String updateSource(String source) {
+    return 'Source: $source';
+  }
+
+  @override
+  String get updateFailed => 'Update failed';
+
+  @override
+  String get updateNetworkFailed =>
+      'The download didn\'t finish. Check your connection and retry, or switch the mirror setting.';
+
+  @override
+  String get updateCorrupted =>
+      'The file failed verification, so the download source may be at fault. Nothing was installed.';
+
+  @override
+  String get updateNotWritable =>
+      'Kanade can\'t replace files in its folder. Use the installer instead.';
+
+  @override
+  String get updateInstallFailed => 'Couldn\'t open the installer.';
+
+  @override
+  String get updateUseInstaller => 'Use the installer';
+
+  @override
+  String get updateOpenBrowser => 'Download in browser';
 }

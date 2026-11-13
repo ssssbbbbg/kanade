@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Splash logo: 240dp canvas, the K sized to fill the 160dp safe circle of the Android 12+ splash. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="240dp"
+    android:viewportWidth="160"
+    android:viewportHeight="160">
+    <group
+        android:translateX="14.5"
+        android:translateY="16">
+        <path
+            android:fillColor="#FFD4FF3A"
+            android:pathData="M39,28h0a7,7 0,0 1,7 7v58a7,7 0,0 1,-7 7h0a7,7 0,0 1,-7 -7v-58a7,7 0,0 1,7 -7z" />
+        <path
+            android:pathData="M94,32L62,64L94,96"
+            android:strokeWidth="14"
+            android:strokeColor="#FFD4FF3A"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
+</vector>

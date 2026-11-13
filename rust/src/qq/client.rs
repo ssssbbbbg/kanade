@@ -2,6 +2,7 @@
 
 use std::future::Future;
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{OnceLock, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -12,6 +13,7 @@ use serde_json::{json, Value};
 use super::error::ApiError;
 use super::sign::{decode_ag1, encrypt_ag1, hash33, sign};
 use super::store::Store;
+use crate::api::types::SessionEndReason;
 
 pub const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 const MUSICU: &str = "https://u.y.qq.com/cgi-bin/musicu.fcg";
@@ -30,6 +32,80 @@ pub struct Session {
     pub nickname: String,
     #[serde(default)]
     pub avatar_url: String,
+    /// musickey 到期时间（Unix 秒），0 表示不知道。
+    #[serde(default)]
+    pub expires_at: i64,
+}
+
+impl Session {
+    pub fn new(uin: String, musickey: String, login_type: i32, expires_at: i64) -> Self {
+        Self { uin, musickey, login_type, nickname: String::new(), avatar_url: String::new(), expires_at }
+    }
+
+    fn end_reason(&self, now_secs: i64) -> SessionEndReason {
+        match self.expires_at {
+            0 => SessionEndReason::Unknown,
+            t if now_secs >= t => SessionEndReason::Expired,
+            _ => SessionEndReason::Revoked,
+        }
+    }
+}
+
+type SessionEndHook = Box<dyn Fn(SessionEndReason) + Send + Sync>;
+
+/// 只有注册了监听的进程（界面进程）才会自动退出登录；Android 播放进程不注册。
+static SESSION_END: RwLock<Option<SessionEndHook>> = RwLock::new(None);
+static VERIFYING: AtomicBool = AtomicBool::new(false);
+
+pub fn on_session_end(hook: impl Fn(SessionEndReason) + Send + Sync + 'static) {
+    *SESSION_END.write().unwrap() = Some(Box::new(hook));
+}
+
+#[cfg(test)]
+thread_local! {
+    pub(crate) static SESSION_CHECKS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+/// 已登录的请求收到 1000 时调用，在后台复核一次，避免个别接口的 1000 误伤登录态。
+pub fn suspect_session() {
+    #[cfg(test)]
+    SESSION_CHECKS.with(|count| count.set(count.get() + 1));
+    if SESSION_END.read().unwrap().is_none() {
+        return;
+    }
+    if let Ok(runtime) = tokio::runtime::Handle::try_current() {
+        runtime.spawn(verify_session());
+    }
+}
+
+/// 用「最近播放」复核登录态（凭证失效时稳定返回 1000）；确认失效就退出登录并通知界面。
+pub async fn verify_session() {
+    let c = core();
+    let Some(session) = c.session() else { return };
+    if VERIFYING.swap(true, Ordering::SeqCst) {
+        return;
+    }
+    let result = c
+        .desktop_private(
+            "music.musicasset.PlayRecentlyRead",
+            "GetPlayRecentlyInfo",
+            json!({ "requestCnt": 1, "type": 2, "updateTime": 0 }),
+        )
+        .await;
+    VERIFYING.store(false, Ordering::SeqCst);
+    // 直接检查错误链；会话副作用仅由 API 边界触发。
+    let rejected = result.err().is_some_and(|e| e.chain().any(|c| c.downcast_ref::<ApiError>().is_some_and(ApiError::is_auth_rejected)));
+    // 复核期间退出或换了账号就不动
+    if !rejected || c.session().is_none_or(|s| s.musickey != session.musickey) {
+        return;
+    }
+    if c.set_session(None).is_err() {
+        return;
+    }
+    let _ = c.store.cache_clear();
+    if let Some(hook) = SESSION_END.read().unwrap().as_ref() {
+        hook(session.end_reason((now_ms() / 1000) as i64));
+    }
 }
 
 pub struct Core {
@@ -378,8 +454,7 @@ mod tests {
 
     #[test]
     fn mobile_write_preserves_login_context_and_large_musicid() {
-        let session = Session { uin: "1152921504606846976".into(), musickey: "test-key".into(), login_type: 1,
-            nickname: String::new(), avatar_url: String::new() };
+        let session = Session::new("1152921504606846976".into(), "test-key".into(), 1, 0);
         let comm = mobile_write_comm(&session);
         assert_eq!(comm["ct"], 11);
         assert_eq!(comm["cv"], ANDROID_VERSION);
@@ -412,17 +487,42 @@ mod tests {
         assert_eq!(anonymous["cv"], "2276");
         assert!(anonymous.get("uin").is_none());
         assert!(anonymous.get("authst").is_none());
-        client.set_session(Some(Session {
-            uin: "123456".into(),
-            musickey: "test-key".into(),
-            login_type: 1,
-            nickname: String::new(),
-            avatar_url: String::new(),
-        })).unwrap();
+        client.set_session(Some(Session::new("123456".into(), "test-key".into(), 1, 0))).unwrap();
         let authenticated = client.desktop_comm();
         assert_eq!(authenticated["uin"], "123456");
         assert_eq!(authenticated["authst"], "test-key");
         assert_eq!(authenticated["tmeLoginType"], 1);
         assert!(authenticated.get("qq").is_none());
+    }
+
+    #[test]
+    fn session_end_reason_follows_key_expiry() {
+        let session = |expires_at| Session::new("1".into(), "k".into(), 2, expires_at);
+        assert_eq!(session(0).end_reason(2_000), SessionEndReason::Unknown);
+        assert_eq!(session(1_000).end_reason(2_000), SessionEndReason::Expired);
+        assert_eq!(session(3_000).end_reason(2_000), SessionEndReason::Revoked);
+        // 旧版本保存的登录态没有到期时间
+        let old: Session = serde_json::from_str(r#"{"uin":"1","musickey":"k","login_type":2}"#).unwrap();
+        assert_eq!(old.end_reason(2_000), SessionEndReason::Unknown);
+    }
+
+    #[tokio::test]
+    #[ignore = "需要联网"]
+    async fn rejected_login_is_cleared_and_reported() {
+        let (tx, rx) = std::sync::mpsc::channel();
+        on_session_end(move |reason| tx.send(reason).unwrap());
+        core().set_session(Some(Session::new("1234567890".into(), "Q_H_L_invalid".into(), 2, 1))).unwrap();
+        verify_session().await;
+        assert_eq!(rx.try_recv(), Ok(SessionEndReason::Expired));
+        assert!(core().session().is_none());
+    }
+
+    #[test]
+    fn only_code_1000_counts_as_rejected_login() {
+        let error = |code: &str| ApiError::ServerError { api: "m".into(), code: code.into() };
+        assert!(error("1000").is_auth_rejected());
+        assert!(error("Some(1000)").is_auth_rejected());
+        assert!(!error("2000").is_auth_rejected());
+        assert!(!ApiError::NotLoggedIn.is_auth_rejected());
     }
 }

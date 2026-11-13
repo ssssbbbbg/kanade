@@ -165,3 +165,35 @@ jobs:
           body_path: CHANGELOG.md
           prerelease: ${{ contains(github.ref_name, '-') }}
           files: dist/*
+
+      # App 内更新读这份清单：preview.json 是最新的一版（含预览版），stable.json 只跟正式版。
+      # 放在 update-manifest 分支上，镜像能通过 raw.githubusercontent.com 转发，GitHub API 不行。
+      - name: Publish update manifest
+        env:
+          TAG: ${{ github.ref_name }}
+          PRERELEASE: ${{ contains(github.ref_name, '-') }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          assets=$(cd dist && for f in *; do
+            jq -n --arg name "$f" --argjson size "$(stat -c%s "$f")" --arg sha256 "$(sha256sum "$f" | cut -d' ' -f1)" \
+              '{name: $name, size: $size, sha256: $sha256}'
+          done | jq -s .)
+          jq -n --arg tag "$TAG" --argjson prerelease "$PRERELEASE" --arg date "$(date -u +%F)" \
+            --rawfile notes CHANGELOG.md --argjson assets "$assets" \
+            '{tag: $tag, prerelease: $prerelease, date: $date, notes: $notes, assets: $assets}' > "$RUNNER_TEMP/manifest.json"
+          cat "$RUNNER_TEMP/manifest.json"
+
+          dir="$RUNNER_TEMP/update-manifest"
+          git init -q "$dir" && cd "$dir"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch -q --depth 1 origin update-manifest; then
+            git checkout -q -b update-manifest FETCH_HEAD
+          else
+            git checkout -q --orphan update-manifest
+          fi
+          cp "$RUNNER_TEMP/manifest.json" preview.json
+          if [ "$PRERELEASE" = false ]; then cp "$RUNNER_TEMP/manifest.json" stable.json; fi
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898099+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "update manifest for $TAG"
+          git push -q origin update-manifest

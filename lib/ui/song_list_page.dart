@@ -58,7 +58,8 @@ class SongListPage extends StatelessWidget {
         final d = await api.getPlaylistDetail(id: id);
         final owned = await mine;
         // “我喜欢”自带的封面是一张固定的红心图，铺满头部不好看，换成第一首歌的封面
-        final liked = owned != null && isLikedPlaylist(owned) && d.songs.isNotEmpty;
+        final liked =
+            owned != null && isLikedPlaylist(owned) && d.songs.isNotEmpty;
         return (
           title: d.title,
           cover: liked ? d.songs.first.coverUrl : d.coverUrl,
@@ -105,24 +106,25 @@ class SongListPage extends StatelessWidget {
     ),
   );
 
-  static Route<void> toplist(int topId, String period, String title) => MaterialPageRoute(
-    builder: (_) => SongListPage(
-      title: title,
-      ranked: true,
-      load: () async {
-        final d = await api.getToplistDetail(topId: topId, period: period);
-        return (
-          title: d.title,
-          cover: d.coverUrl,
-          creator: '',
-          period: d.period,
-          description: d.description,
-          songs: d.songs,
-          owned: null,
-        );
-      },
-    ),
-  );
+  static Route<void> toplist(int topId, String period, String title) =>
+      MaterialPageRoute(
+        builder: (_) => SongListPage(
+          title: title,
+          ranked: true,
+          load: () async {
+            final d = await api.getToplistDetail(topId: topId, period: period);
+            return (
+              title: d.title,
+              cover: d.coverUrl,
+              creator: '',
+              period: d.period,
+              description: d.description,
+              songs: d.songs,
+              owned: null,
+            );
+          },
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +132,8 @@ class SongListPage extends StatelessWidget {
     return GlassBackScaffold(
       body: AsyncView<ListData>(
         load: load,
-        builder: (context, d) => _Body(d, ranked: ranked, searchable: searchable),
+        builder: (context, d) =>
+            _Body(d, ranked: ranked, searchable: searchable),
       ),
     );
   }
@@ -193,7 +196,10 @@ class _BodyState extends State<_Body> with SingleTickerProviderStateMixin {
 
   /// 搜索时大封面收成顶栏、按钮行收起，标题淡出、搜索框淡入。
   bool _searching = false;
-  late final _searchAnim = AnimationController(vsync: this, duration: const Duration(milliseconds: 360));
+  late final _searchAnim = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 360),
+  );
   late final _searchCurve = CurvedAnimation(
     parent: _searchAnim,
     curve: Curves.easeOutCubic,
@@ -219,7 +225,11 @@ class _BodyState extends State<_Body> with SingleTickerProviderStateMixin {
     if (on) {
       // 列表回到顶上，封面和按钮行一起收起来，看到的就是筛选结果的开头
       if (_scroll.hasClients && _scroll.offset > 0) {
-        _scroll.animateTo(0, duration: _searchAnim.duration!, curve: Curves.easeOutCubic);
+        _scroll.animateTo(
+          0,
+          duration: _searchAnim.duration!,
+          curve: Curves.easeOutCubic,
+        );
       }
       _searchAnim.forward();
       _focus.requestFocus();
@@ -235,7 +245,9 @@ class _BodyState extends State<_Body> with SingleTickerProviderStateMixin {
     if (q.isEmpty) return _songs;
     return [
       for (final s in _songs)
-        if (s.name.toLowerCase().contains(q) || s.singers.any((e) => e.name.toLowerCase().contains(q))) s,
+        if (s.name.toLowerCase().contains(q) ||
+            s.singers.any((e) => e.name.toLowerCase().contains(q)))
+          s,
     ];
   }
 
@@ -297,7 +309,9 @@ class _BodyState extends State<_Body> with SingleTickerProviderStateMixin {
                   opacity: ReverseAnimation(_searchCurve),
                   child: _Actions(
                     songs: _songs,
-                    description: d.description.replaceAll(RegExp(r'<[^>]+>'), '').trim(),
+                    description: d.description
+                        .replaceAll(RegExp(r'<[^>]+>'), '')
+                        .trim(),
                     onSearch: widget.searchable ? () => _search(true) : null,
                     onEdit: onEdit,
                   ),
@@ -313,16 +327,25 @@ class _BodyState extends State<_Body> with SingleTickerProviderStateMixin {
                       Expanded(
                         child: Text(
                           l.filterFound(shown.length),
-                          style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
                         ),
                       ),
                       FilledButton.icon(
                         style: FilledButton.styleFrom(
                           minimumSize: const Size(0, 36),
                           padding: const EdgeInsets.fromLTRB(10, 0, 14, 0),
-                          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                          textStyle: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        onPressed: () => context.read<PlayerController>().playList(shown, 0),
+                        onPressed: () =>
+                            context.read<PlayerController>().playList(shown, 0),
                         icon: const Icon(Icons.play_arrow_rounded, size: 18),
                         label: Text(l.playFiltered(shown.length)),
                       ),
@@ -341,7 +364,11 @@ class _BodyState extends State<_Body> with SingleTickerProviderStateMixin {
             else if (shown.isNotEmpty)
               SliverPrototypeExtentList.builder(
                 key: _listKey,
-                prototypeItem: SongTile(songs: shown, index: 0, rank: widget.ranked ? 1 : null),
+                prototypeItem: SongTile(
+                  songs: shown,
+                  index: 0,
+                  rank: widget.ranked ? 1 : null,
+                ),
                 itemCount: shown.length,
                 itemBuilder: (context, i) {
                   final song = shown[i];
@@ -372,7 +399,10 @@ class _BodyState extends State<_Body> with SingleTickerProviderStateMixin {
     return [
       d.creator,
       l.songCount(_songs.length),
-      if (secs > 0) hours > 0 ? l.durationHoursMinutes(hours, minutes) : l.durationMinutes(minutes),
+      if (secs > 0)
+        hours > 0
+            ? l.durationHoursMinutes(hours, minutes)
+            : l.durationMinutes(minutes),
       if (d.period.isNotEmpty) l.updatedAt(d.period),
     ].where((s) => s.isNotEmpty).join(' · ');
   }
@@ -408,7 +438,11 @@ class _Hero extends SliverPersistentHeaderDelegate {
   double get minExtent => minHeight;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final scheme = Theme.of(context).colorScheme;
     // 按实际剩下的高度算收起了多少，滚动和搜索两种收法表现一致
     final height = max(minHeight, maxExtent - shrinkOffset);
@@ -425,7 +459,10 @@ class _Hero extends SliverPersistentHeaderDelegate {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               stops: const [0.4, 1],
-              colors: [scheme.surface.withValues(alpha: t), scheme.surface],
+              colors: [
+                scheme.surface.withValues(alpha: t),
+                scheme.surface,
+              ],
             ),
           ),
         ),
@@ -442,14 +479,21 @@ class _Hero extends SliverPersistentHeaderDelegate {
                   title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, height: 1.15),
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900,
+                    height: 1.15,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   meta,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -462,14 +506,18 @@ class _Hero extends SliverPersistentHeaderDelegate {
           height: minHeight - top,
           child: Opacity(
             // 只有往上滚收起时显示；搜索时让给搜索框
-            opacity: (((t - 0.6) / 0.4).clamp(0.0, 1.0) * (1 - search * 2)).clamp(0.0, 1.0),
+            opacity: (((t - 0.6) / 0.4).clamp(0.0, 1.0) * (1 - search * 2))
+                .clamp(0.0, 1.0),
             child: Align(
               alignment: AlignmentDirectional.centerStart,
               child: Text(
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -482,7 +530,10 @@ class _Hero extends SliverPersistentHeaderDelegate {
             height: minHeight - top,
             child: Opacity(
               opacity: ((search - 0.3) / 0.7).clamp(0.0, 1.0),
-              child: Transform.translate(offset: Offset(24 * (1 - search), 0), child: bar),
+              child: Transform.translate(
+                offset: Offset(24 * (1 - search), 0),
+                child: bar,
+              ),
             ),
           ),
       ],
@@ -503,7 +554,12 @@ class _Hero extends SliverPersistentHeaderDelegate {
 
 /// 简介一行（点开看全文），下面左边是搜索、更多，右边是随机和柠檬绿的大播放钮。
 class _Actions extends StatefulWidget {
-  const _Actions({required this.songs, required this.description, this.onSearch, this.onEdit});
+  const _Actions({
+    required this.songs,
+    required this.description,
+    this.onSearch,
+    this.onEdit,
+  });
 
   final List<Song> songs;
   final String description;
@@ -550,7 +606,11 @@ class _ActionsState extends State<_Actions> {
                     widget.description,
                     maxLines: _expanded ? null : 1,
                     overflow: _expanded ? null : TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, height: 1.5, color: scheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.5,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ),
@@ -565,7 +625,11 @@ class _ActionsState extends State<_Actions> {
                   icon: const Icon(Icons.search_rounded),
                 ),
               if (widget.onEdit != null)
-                IconButton(tooltip: l.more, onPressed: widget.onEdit, icon: const Icon(Icons.more_horiz_rounded)),
+                IconButton(
+                  tooltip: l.more,
+                  onPressed: widget.onEdit,
+                  icon: const Icon(Icons.more_horiz_rounded),
+                ),
               const Spacer(),
               IconButton(
                 tooltip: l.shufflePlay,
@@ -581,7 +645,9 @@ class _ActionsState extends State<_Actions> {
                   foregroundColor: scheme.onPrimaryContainer,
                   disabledBackgroundColor: scheme.surfaceContainerHigh,
                 ),
-                onPressed: songs.isEmpty ? null : () => context.read<PlayerController>().playList(songs, 0),
+                onPressed: songs.isEmpty
+                    ? null
+                    : () => context.read<PlayerController>().playList(songs, 0),
                 icon: const Icon(Icons.play_arrow_rounded, size: 32),
               ),
             ],
@@ -594,7 +660,12 @@ class _ActionsState extends State<_Actions> {
 
 /// 搜索时顶栏里的搜索框和“取消”，左边让出玻璃返回钮的位置（由 [_Hero] 摆放）。
 class _SearchBar extends StatelessWidget {
-  const _SearchBar(this.controller, {required this.focusNode, required this.onChanged, required this.onCancel});
+  const _SearchBar(
+    this.controller, {
+    required this.focusNode,
+    required this.onChanged,
+    required this.onCancel,
+  });
 
   final TextEditingController controller;
   final FocusNode focusNode;
@@ -622,7 +693,11 @@ class _SearchBar extends StatelessWidget {
                   filled: true,
                   fillColor: scheme.surfaceContainerHigh,
                   contentPadding: EdgeInsets.zero,
-                  prefixIcon: Icon(Icons.search_rounded, size: 20, color: scheme.onSurfaceVariant),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    size: 20,
+                    color: scheme.onSurfaceVariant,
+                  ),
                   suffixIcon: controller.text.isEmpty
                       ? null
                       : IconButton(
@@ -632,7 +707,10 @@ class _SearchBar extends StatelessWidget {
                             onChanged();
                           },
                         ),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(999), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(999),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
             ),

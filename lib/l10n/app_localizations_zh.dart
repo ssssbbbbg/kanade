@@ -226,9 +226,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get qualityAiCodec => 'AI 音质';
 
   @override
-  String get qualityVinyl => '黑胶';
-
-  @override
   String get reasonUnsupported => '播放器暂不支持此格式';
 
   @override
@@ -388,6 +385,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get queue => '播放队列';
 
   @override
+  String get removeFromQueue => '从队列移除';
+
+  @override
+  String get reorderQueue => '拖动调整顺序';
+
+  @override
   String playbackError(String error) {
     return '播放出错：$error';
   }
@@ -507,25 +510,40 @@ class AppLocalizationsZh extends AppLocalizations {
   String get comments => '评论';
 
   @override
-  String get hotComments => '热门评论';
-
-  @override
-  String get latestComments => '最新评论';
-
-  @override
-  String commentTotal(int count) {
-    return '共 $count 条评论';
-  }
+  String get commentsRecommended => '推荐';
 
   @override
   String get noComments => '还没有评论';
 
   @override
+  String commentCount(String count) {
+    return '$count 条评论';
+  }
+
+  @override
+  String get timeJustNow => '刚刚';
+
+  @override
+  String timeMinutesAgo(int count) {
+    return '$count 分钟前';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    return '$count 小时前';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    return '$count 天前';
+  }
+
+  @override
   String get replies => '回复';
 
   @override
-  String viewReplies(int count) {
-    return '查看 $count 条回复';
+  String replyCount(int count) {
+    return '$count 条回复';
   }
 
   @override
@@ -609,10 +627,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get defaultQualityHint => '选的音质没有或播不了时会自动降低';
 
   @override
-  String get songFade => '切歌淡入淡出';
+  String get songFade => '播放过渡';
 
   @override
-  String get songFadeHint => '上一首渐渐变小，下一首渐渐变大';
+  String get songFadeHint => '切歌、暂停和继续播放时音量渐变';
 
   @override
   String get songFadeOff => '关闭';
@@ -663,6 +681,39 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get logoutConfirm => '确定退出登录？';
+
+  @override
+  String get sessionEndedTitle => '登录已失效';
+
+  @override
+  String get sessionExpired => '登录已超过有效期，已自动退出。重新登录后就能继续同步歌单和播放会员歌曲。';
+
+  @override
+  String get sessionRevoked => '登录还没到期就被 QQ 音乐注销了，已自动退出。';
+
+  @override
+  String get sessionRejected => 'QQ 音乐不再接受当前的登录，已自动退出。';
+
+  @override
+  String get sessionCausesTitle => '可能的原因';
+
+  @override
+  String get sessionCauseOtherDevice => '账号在其他设备登录，这里被挤下线';
+
+  @override
+  String get sessionCauseDeviceRemoved => '在「登录设备管理」里删除了这台设备';
+
+  @override
+  String get sessionCausePassword => '修改了账号密码';
+
+  @override
+  String get sessionCauseExpired => '登录超过了有效期';
+
+  @override
+  String get loginAgain => '重新登录';
+
+  @override
+  String get later => '稍后';
 
   @override
   String get ok => '确定';
@@ -922,4 +973,112 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sleepTimerOff => '关闭定时';
+
+  @override
+  String get close => '关闭';
+
+  @override
+  String get settingsAbout => '关于';
+
+  @override
+  String get checkUpdate => '检查更新';
+
+  @override
+  String currentVersion(String version) {
+    return '当前版本 $version';
+  }
+
+  @override
+  String get updateChecking => '正在检查…';
+
+  @override
+  String get upToDate => '已是最新';
+
+  @override
+  String get updateCheckFailed => '检查更新失败，稍后再试';
+
+  @override
+  String get updatePreview => '接收预览版更新';
+
+  @override
+  String get updatePreviewHint => '测试版也会提醒，可能不稳定';
+
+  @override
+  String get updateMirror => '通过镜像下载更新';
+
+  @override
+  String get updateMirrorHint => '打开后不连接 GitHub，全部走镜像';
+
+  @override
+  String updateAvailable(String version) {
+    return '发现新版本 $version';
+  }
+
+  @override
+  String get updatePreviewBadge => '预览版';
+
+  @override
+  String updateCurrent(String version) {
+    return '当前 $version';
+  }
+
+  @override
+  String updateDate(String date) {
+    return '$date 发布';
+  }
+
+  @override
+  String get updateInstaller => '安装包';
+
+  @override
+  String get updateInstallerHint => '运行安装程序覆盖更新';
+
+  @override
+  String get updateArchive => '压缩包';
+
+  @override
+  String get updateArchiveHint => '退出后自动替换文件';
+
+  @override
+  String get updateNow => '立即更新';
+
+  @override
+  String get updateSkip => '跳过这个版本';
+
+  @override
+  String updateDownloading(String version) {
+    return '正在下载 $version';
+  }
+
+  @override
+  String get updateDownloadingHint => '下载完会自动校验并安装';
+
+  @override
+  String get updateConnecting => '正在连接下载源…';
+
+  @override
+  String updateSource(String source) {
+    return '下载源：$source';
+  }
+
+  @override
+  String get updateFailed => '更新失败';
+
+  @override
+  String get updateNetworkFailed => '没能下载下来。检查网络后重试，或在设置里切换镜像。';
+
+  @override
+  String get updateCorrupted => '文件校验没通过，可能是下载源出了问题。没有安装任何东西。';
+
+  @override
+  String get updateNotWritable => '没有权限替换程序目录里的文件，请改用安装包。';
+
+  @override
+  String get updateInstallFailed => '没能打开安装程序。';
+
+  @override
+  String get updateUseInstaller => '改用安装包';
+
+  @override
+  String get updateOpenBrowser => '在浏览器中下载';
 }

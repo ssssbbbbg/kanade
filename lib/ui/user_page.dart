@@ -60,10 +60,16 @@ class _ProfileBodyState extends State<_ProfileBody> {
   late final _playlists = Pager<PlaylistBrief>(
     (page, _) async {
       final p = widget.profile;
-      final r = await api.getUserPublicPlaylists(euin: p.euin, creator: p.name, page: page, pageSize: 30);
+      final r = await api.getUserPublicPlaylists(
+        euin: p.euin,
+        creator: p.name,
+        page: page,
+        pageSize: 30,
+      );
       return (r.playlists, r.hasMore);
     },
-    hasMore: widget.profile.playlistCount > 0 && !widget.profile.playlistsHidden,
+    hasMore:
+        widget.profile.playlistCount > 0 && !widget.profile.playlistsHidden,
   );
   final _assets = <UserAssetKind, Pager<UserAssetPage>>{};
   final _hidden = <UserAssetKind>{};
@@ -79,17 +85,31 @@ class _ProfileBodyState extends State<_ProfileBody> {
   }
 
   void _select(VoidCallback change) {
-    keepPinned(_scroll, _marker, MediaQuery.paddingOf(context).top + _barHeight);
+    keepPinned(
+      _scroll,
+      _marker,
+      MediaQuery.paddingOf(context).top + _barHeight,
+    );
     setState(change);
   }
 
   /// 一页结果当成一个条目存，四类资产共用一个 [Pager]。
-  Pager<UserAssetPage> _assetPager(UserAssetKind kind) => _assets[kind] ??= Pager((page, _) async {
-    final r = await api.getUserAssets(euin: widget.profile.euin, kind: kind, page: page, pageSize: 30);
-    if (r.hidden && mounted) setState(() => _hidden.add(kind));
-    final empty = r.songs.isEmpty && r.playlists.isEmpty && r.albums.isEmpty && r.videos.isEmpty;
-    return (empty ? <UserAssetPage>[] : [r], r.hasMore);
-  });
+  Pager<UserAssetPage> _assetPager(UserAssetKind kind) =>
+      _assets[kind] ??= Pager((page, _) async {
+        final r = await api.getUserAssets(
+          euin: widget.profile.euin,
+          kind: kind,
+          page: page,
+          pageSize: 30,
+        );
+        if (r.hidden && mounted) setState(() => _hidden.add(kind));
+        final empty =
+            r.songs.isEmpty &&
+            r.playlists.isEmpty &&
+            r.albums.isEmpty &&
+            r.videos.isEmpty;
+        return (empty ? <UserAssetPage>[] : [r], r.hasMore);
+      });
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +129,9 @@ class _ProfileBodyState extends State<_ProfileBody> {
               child: ListenableBuilder(
                 listenable: _scroll,
                 builder: (context, child) => Opacity(
-                  opacity: _scroll.hasClients ? ((_scroll.offset - 70) / 50).clamp(0.0, 1.0) : 0,
+                  opacity: _scroll.hasClients
+                      ? ((_scroll.offset - 70) / 50).clamp(0.0, 1.0)
+                      : 0,
                   child: child,
                 ),
                 child: Align(
@@ -118,7 +140,10 @@ class _ProfileBodyState extends State<_ProfileBody> {
                     p.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -145,14 +170,25 @@ class _ProfileBodyState extends State<_ProfileBody> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 PillRow(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  spacing: 12,
                   children: [
-                    Pill(label: l.playlistsCreated, selected: !_likes, onTap: () => _select(() => _likes = false)),
-                    Pill(label: l.userLikes, selected: _likes, onTap: () => _select(() => _likes = true)),
+                    UnderlineTab(
+                      label: l.playlistsCreated,
+                      selected: !_likes,
+                      onTap: () => _select(() => _likes = false),
+                    ),
+                    UnderlineTab(
+                      label: l.userLikes,
+                      selected: _likes,
+                      onTap: () => _select(() => _likes = true),
+                    ),
                   ],
                 ),
                 if (_likes) ...[
                   const SizedBox(height: 10),
                   PillRow(
+                    spacing: 4,
                     children: [
                       for (final (kind, label) in [
                         (UserAssetKind.song, l.tabSongs),
@@ -160,7 +196,12 @@ class _ProfileBodyState extends State<_ProfileBody> {
                         (UserAssetKind.album, l.tabAlbums),
                         (UserAssetKind.video, l.searchKindVideo),
                       ])
-                        Pill(label: label, selected: _kind == kind, onTap: () => _select(() => _kind = kind)),
+                        Pill(
+                          label: label,
+                          selected: _kind == kind,
+                          small: true,
+                          onTap: () => _select(() => _kind = kind),
+                        ),
                     ],
                   ),
                 ],
@@ -193,7 +234,8 @@ class _ProfileBodyState extends State<_ProfileBody> {
         final playlists = [for (final r in pages) ...r.playlists];
         final albums = [for (final r in pages) ...r.albums];
         final videos = [for (final r in pages) ...r.videos];
-        final count = songs.length + playlists.length + albums.length + videos.length;
+        final count =
+            songs.length + playlists.length + albums.length + videos.length;
         return SliverMainAxisGroup(
           slivers: [
             SliverList.builder(
@@ -268,14 +310,20 @@ class _Head extends StatelessWidget {
                       p.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Row(
                       children: [
                         _Stat(formatCount(l, p.fansCount.toInt()), l.statFans),
                         const SizedBox(width: 20),
-                        _Stat(formatCount(l, p.followCount.toInt()), l.statFollows),
+                        _Stat(
+                          formatCount(l, p.followCount.toInt()),
+                          l.statFollows,
+                        ),
                         const SizedBox(width: 20),
                         _Stat('${p.playlistCount}', l.statPlaylists),
                       ],
@@ -285,10 +333,16 @@ class _Head extends StatelessWidget {
               ),
             ],
           ),
-          if (p.intro.isNotEmpty) ...[const SizedBox(height: 16), IntroText(p.intro)],
+          if (p.intro.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            IntroText(p.intro),
+          ],
           if (!p.isSelf) ...[
             const SizedBox(height: 12),
-            SizedBox(height: 44, child: FollowButton(followed: followed, onChanged: onFollow)),
+            SizedBox(
+              height: 44,
+              child: FollowButton(followed: followed, onChanged: onFollow),
+            ),
           ],
         ],
       ),
@@ -306,9 +360,18 @@ class _Stat extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+      Text(
+        value,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+      ),
       const SizedBox(height: 2),
-      Text(label, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+      Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
     ],
   );
 }
@@ -330,7 +393,11 @@ class _IntroTextState extends State<IntroText> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final style = TextStyle(fontSize: 14, height: 1.6, color: scheme.onSurface.withValues(alpha: 0.8));
+    final style = TextStyle(
+      fontSize: 14,
+      height: 1.6,
+      color: scheme.onSurface.withValues(alpha: 0.8),
+    );
     return LayoutBuilder(
       builder: (context, constraints) {
         final painter = TextPainter(
@@ -360,7 +427,10 @@ class _IntroTextState extends State<IntroText> {
                 ),
                 onPressed: () => setState(() => _open = !_open),
                 iconAlignment: IconAlignment.end,
-                icon: Icon(_open ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+                icon: Icon(
+                  _open ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                  size: 18,
+                ),
                 label: Text(_open ? l.showLess : l.showMore),
               ),
           ],

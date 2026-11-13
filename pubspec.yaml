@@ -61,6 +61,7 @@ dependencies:
     path: third_party/liquid_glass_widgets
   record: ^7.1.2
   flutter_staggered_grid_view: ^0.7.0
+  package_info_plus: ^10.2.2
 
 dev_dependencies:
   flutter_test:

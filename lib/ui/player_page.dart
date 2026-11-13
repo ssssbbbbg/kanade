@@ -15,12 +15,15 @@ import '../library/library_controller.dart';
 import '../player/player_controller.dart';
 import '../src/rust/api/types.dart';
 import 'comments_page.dart';
+import 'play_pause_button.dart';
 import 'player_background.dart';
 import 'player_detail.dart';
 import 'player_lyrics.dart';
 import 'player_route.dart';
+import 'queue_list.dart';
 import 'sleep_timer_sheet.dart';
 import 'smooth_scroll.dart';
+import 'song_action_sheet.dart';
 import 'song_actions.dart';
 import 'theme.dart';
 import 'toast.dart';
@@ -120,6 +123,7 @@ class _PlayerPageState extends State<PlayerPage>
   void _loadArt(String url) {
     if (url == _artUrl) return;
     _artUrl = url;
+    unawaited(_precacheQueueCovers());
     if (url.isEmpty) return;
     // 迷你播放器一般已经预取好了，第一帧直接用
     final cached = cachedCoverArt(url);
@@ -130,6 +134,20 @@ class _PlayerPageState extends State<PlayerPage>
     loadCoverArt(url).then((art) {
       if (mounted && _artUrl == url) setState(() => _art = art);
     }, onError: (_) {});
+  }
+
+  /// 队列翻开时第一屏的封面提前一张一张加载好。不然十几张封面都在手指刚动的那一帧
+  /// 同时发起网络请求，第一次翻开会卡一下（之后图片缓存里有了就不会）。
+  Future<void> _precacheQueueCovers() async {
+    // 在 build 里调用，不能用 context.read
+    final p = Provider.of<PlayerController>(context, listen: false);
+    final song = p.current;
+    final songs = p.queue.skip(max(0, p.index - 1)).take(24).toList();
+    for (final s in songs) {
+      // 换歌后会从新的位置重新来一遍，这一遍不用接着做
+      if (!mounted || p.current != song) return;
+      await precacheImage(queueCover(context, s), context, onError: (_, _) {});
+    }
   }
 
   @override
@@ -271,6 +289,8 @@ class _PlayerPageState extends State<PlayerPage>
 
     final page = Scaffold(
       backgroundColor: Colors.black,
+      // 播放页没有输入框；弹窗里弹键盘时页面不跟着压扁、逐帧重新排版
+      resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -418,6 +438,7 @@ class _PlayerPageState extends State<PlayerPage>
                                   placeholderUrl: song.coverUrl,
                                   playing: p.playing,
                                   expanded: t < 0.5,
+                                  t: t,
                                 ),
                               ),
                               Positioned.fromRect(
@@ -524,6 +545,7 @@ class _AlbumArt extends StatelessWidget {
     required this.placeholderUrl,
     required this.playing,
     required this.expanded,
+    this.t = 0,
   });
 
   final String url;
@@ -531,15 +553,21 @@ class _AlbumArt extends StatelessWidget {
   final bool playing;
   final bool expanded;
 
+  /// 翻页进度：0 是主页面的大封面，1 是缩在左上角的小封面。
+  final double t;
+
   @override
   Widget build(BuildContext context) {
     final lifted = expanded && playing;
     final radius = expanded ? 14.0 : 8.0;
     final morph = PlayerMorph.maybeOf(context);
-    final art = AnimatedScale(
-      scale: expanded && !playing ? 0.8 : 1,
+    // 暂停缩小的幅度跟着翻页进度连续收掉，滑动途中不会突然弹一下
+    final art = TweenAnimationBuilder<double>(
+      tween: Tween(end: playing ? 0 : 1),
       duration: const Duration(milliseconds: 650),
       curve: playing ? Curves.easeOutBack : Curves.easeOutCubic,
+      builder: (_, paused, child) =>
+          Transform.scale(scale: 1 - 0.2 * paused * (1 - t), child: child),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 650),
         curve: Curves.easeOutCubic,
@@ -964,10 +992,14 @@ class _ThinSlider extends StatelessWidget {
     required this.onStart,
     required this.onChanged,
     required this.onEnd,
+    this.chorusStart,
   });
 
   final double value;
   final bool active;
+
+  /// 高潮开始处在进度条上的比例，在进度条里画一个小点。
+  final double? chorusStart;
   final ValueChanged<double> onStart;
   final ValueChanged<double> onChanged;
   final VoidCallback onEnd;
@@ -1004,15 +1036,27 @@ class _ThinSlider extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.22),
                     borderRadius: BorderRadius.circular(height),
                   ),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: FractionallySizedBox(
-                      widthFactor: value.clamp(0.0, 1.0),
-                      heightFactor: 1,
-                      child: ColoredBox(
-                        color: active
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.75),
+                  child: CustomPaint(
+                    foregroundPainter: chorusStart == null
+                        ? null
+                        : _ChorusDot(
+                            chorusStart!,
+                            played: value >= chorusStart!,
+                          ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: FractionallySizedBox(
+                        widthFactor: value.clamp(0.0, 1.0),
+                        heightFactor: 1,
+                        // 进度往前走的那头也是圆的
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: active
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.75),
+                            borderRadius: BorderRadius.circular(height),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -1024,6 +1068,38 @@ class _ThinSlider extends StatelessWidget {
       },
     );
   }
+}
+
+/// 画在进度条轨道里的高潮起点：和轨道等高、约两倍宽的小胶囊，
+/// 比底色亮一档；已播放处落在白色进度上，改用深色。跟着轨道一起变粗。
+class _ChorusDot extends CustomPainter {
+  const _ChorusDot(this.start, {required this.played});
+
+  final double start;
+  final bool played;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final h = size.height;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset(size.width * start, h / 2),
+          width: h * 1.8,
+          height: h,
+        ),
+        Radius.circular(h / 2),
+      ),
+      Paint()
+        ..color = played
+            ? Colors.black.withValues(alpha: 0.2)
+            : Colors.white.withValues(alpha: 0.4),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ChorusDot old) =>
+      old.start != start || old.played != played;
 }
 
 class _ProgressBar extends StatefulWidget {
@@ -1051,11 +1127,15 @@ class _ProgressBarState extends State<_ProgressBar> {
       builder: (_, pos, _) {
         final v = _drag ?? (total == 0 ? 0.0 : pos.inMilliseconds / total);
         final shown = Duration(milliseconds: (v * total).round());
+        final c = p.chorus;
         return Column(
           children: [
             _ThinSlider(
               value: v,
               active: _drag != null,
+              chorusStart: c == null || c.startMs >= total
+                  ? null
+                  : c.startMs / total,
               onStart: (x) => setState(() => _drag = x),
               onChanged: (x) => setState(() => _drag = x),
               onEnd: () {
@@ -1119,7 +1199,7 @@ class _Transport extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              _PlayPauseIcon(playing: p.playing),
+              PlayPauseIcon(playing: p.playing, size: 60, color: Colors.white),
               if (p.loading || p.buffering)
                 const SizedBox.square(
                   dimension: 74,
@@ -1561,48 +1641,6 @@ class _VolumeFill extends StatelessWidget {
   }
 }
 
-class _PlayPauseIcon extends StatefulWidget {
-  const _PlayPauseIcon({required this.playing});
-
-  final bool playing;
-
-  @override
-  State<_PlayPauseIcon> createState() => _PlayPauseIconState();
-}
-
-class _PlayPauseIconState extends State<_PlayPauseIcon>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 320),
-    value: widget.playing ? 1 : 0,
-  );
-
-  @override
-  void didUpdateWidget(_PlayPauseIcon old) {
-    super.didUpdateWidget(old);
-    if (old.playing != widget.playing) {
-      widget.playing ? _c.forward() : _c.reverse();
-    }
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedIcon(
-      icon: AnimatedIcons.play_pause,
-      progress: CurvedAnimation(parent: _c, curve: Curves.easeInOutCubic),
-      size: 60,
-      color: Colors.white,
-    );
-  }
-}
-
 /// 音质切换：只列出当前歌曲实际可播放的档位。
 /// 点一下按钮本身会用弹簧动画长成毛玻璃菜单，和音量条同一套质感；选完再缩回按钮。
 class QualityMenu extends StatefulWidget {
@@ -1644,8 +1682,25 @@ class _QualityMenuState extends State<QualityMenu>
   /// 刚点中、还没收起的那一档，白色选中块先滑过去再收。
   Quality? _picked;
 
+  Animation<double>? _route;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context)?.animation;
+    if (route == _route) return;
+    _route?.removeStatusListener(_onRouteStatus);
+    _route = route?..addStatusListener(_onRouteStatus);
+  }
+
+  /// 播放页开始收起时菜单跟着缩回按钮，不留在最上层。
+  void _onRouteStatus(AnimationStatus status) {
+    if (status == AnimationStatus.reverse) unawaited(_close());
+  }
+
   @override
   void dispose() {
+    _route?.removeStatusListener(_onRouteStatus);
     _c.dispose();
     super.dispose();
   }
@@ -1787,6 +1842,8 @@ class _QualityMenuState extends State<QualityMenu>
         ),
         CompositedTransformFollower(
           link: _link,
+          // 播放页收起时按钮不再绘制，菜单别跑到左上角去
+          showWhenUnlinked: false,
           // 以按钮底边中点为锚，菜单从按钮所在位置往上长出来
           targetAnchor: Alignment.bottomCenter,
           followerAnchor: Alignment.bottomCenter,
@@ -2031,11 +2088,9 @@ class _QueuePanel extends StatefulWidget {
 }
 
 class _QueuePanelState extends State<_QueuePanel> {
-  static const _extent = 64.0;
   late final ScrollController _scroll = SmoothScrollController(
-    initialScrollOffset: max(
-      0,
-      (context.read<PlayerController>().index - 1) * _extent,
+    initialScrollOffset: QueueList.initialOffset(
+      context.read<PlayerController>().index,
     ),
   );
 
@@ -2045,8 +2100,13 @@ class _QueuePanelState extends State<_QueuePanel> {
   bool _decided = false;
   bool _pulling = false;
 
+  /// 这次按在了拖动手柄上。手柄里的监听比这里的 [_onDown] 先收到按下。
+  bool _onHandle = false;
+
   void _onDown(PointerDownEvent e) {
-    if (widget.onPull == null) return;
+    final onHandle = _onHandle;
+    _onHandle = false;
+    if (widget.onPull == null || onHandle) return;
     _tracker = VelocityTracker.withKind(e.kind)
       ..addPosition(e.timeStamp, e.position);
     _moved = 0;
@@ -2094,7 +2154,6 @@ class _QueuePanelState extends State<_QueuePanel> {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.watch<PlayerController>();
     final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2129,204 +2188,18 @@ class _QueuePanelState extends State<_QueuePanel> {
               onPointerMove: _onMove,
               onPointerUp: (e) => _onUp(e, cancel: false),
               onPointerCancel: (e) => _onUp(e, cancel: true),
-              child: ListView.builder(
+              child: QueueList(
                 controller: _scroll,
                 physics: _pulling ? const NeverScrollableScrollPhysics() : null,
-                itemExtent: _extent,
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 40),
-                itemCount: p.queue.length,
-                itemBuilder: (_, i) => _QueueTile(
-                  song: p.queue[i],
-                  current: i == p.index,
-                  played: i < p.index,
-                  playing: p.playing,
-                  onTap: () => p.playAt(i),
-                ),
+                color: Colors.white,
+                dragColor: const Color(0xF0303030),
+                // 在手柄上按下是要拖动排序，不当成往下拉翻回主页面
+                onHandleDown: () => _onHandle = true,
               ),
             ),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _QueueTile extends StatelessWidget {
-  const _QueueTile({
-    required this.song,
-    required this.current,
-    required this.played,
-    required this.playing,
-    required this.onTap,
-  });
-
-  final Song song;
-  final bool current;
-  final bool played;
-  final bool playing;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    // 已播放的歌用颜色变淡，不用 Opacity 图层
-    final fg = played ? 0.45 : 1.0;
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        hoverColor: Colors.white10,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: current
-                ? Colors.white.withValues(alpha: 0.12)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Stack(
-                children: [
-                  // 队列封面只有 46px，按显示尺寸解码，不用解出整张 300px 原图
-                  SizedBox.square(
-                    dimension: 46,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: Image.network(
-                        httpsUrl(song.coverUrl),
-                        cacheWidth:
-                            (46 * MediaQuery.devicePixelRatioOf(context))
-                                .round(),
-                        fit: BoxFit.cover,
-                        color: played ? const Color(0x73FFFFFF) : null,
-                        colorBlendMode: BlendMode.modulate,
-                        errorBuilder: (_, _, _) =>
-                            const ColoredBox(color: Colors.white12),
-                      ),
-                    ),
-                  ),
-                  if (current)
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Colors.black45,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Center(child: _NowPlayingBars(playing: playing)),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      song.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: current ? FontWeight.w800 : FontWeight.w600,
-                        color: Colors.white.withValues(alpha: fg),
-                      ),
-                    ),
-                    Text(
-                      singerNames(song),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.6 * fg),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                formatDuration(Duration(seconds: song.durationSecs)),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.38 * fg),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 正在播放的跳动音柱。
-class _NowPlayingBars extends StatefulWidget {
-  const _NowPlayingBars({required this.playing});
-
-  final bool playing;
-
-  @override
-  State<_NowPlayingBars> createState() => _NowPlayingBarsState();
-}
-
-class _NowPlayingBarsState extends State<_NowPlayingBars>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1200),
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.playing) _c.repeat();
-  }
-
-  @override
-  void didUpdateWidget(_NowPlayingBars old) {
-    super.didUpdateWidget(old);
-    if (widget.playing && !_c.isAnimating) _c.repeat();
-    if (!widget.playing) _c.stop();
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _c,
-      builder: (_, _) => Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          for (var i = 0; i < 4; i++)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 1.2),
-              width: 3,
-              height: widget.playing
-                  ? 5 +
-                        11 *
-                            (0.5 +
-                                0.5 *
-                                    sin(
-                                      _c.value * 2 * pi * (i.isEven ? 2 : 3) +
-                                          i * 1.3,
-                                    ))
-                  : 4,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-        ],
-      ),
     );
   }
 }

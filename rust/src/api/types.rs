@@ -1,5 +1,7 @@
 //! 暴露给 Dart 的数据结构。
 
+use crate::api::error::ApiError;
+
 #[derive(Debug, Clone)]
 pub struct Singer {
     pub mid: String,
@@ -43,6 +45,8 @@ pub enum Quality {
     Atmos71,
     Dolby,
     Dts,
+    /// 360 Reality Audio（RA04 .mp4，MPEG-H 3D Audio）
+    Ra360,
     Ogg640,
     Ogg320,
     Ogg192,
@@ -50,7 +54,6 @@ pub enum Quality {
     Aac192,
     Aac48,
     Aicodec,
-    Vinyl,
 }
 
 /// 音质不可用的原因，文案由 Dart 侧翻译。
@@ -80,11 +83,21 @@ pub struct QualityOption {
     pub reason: Option<QualityUnavailableReason>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SongUrl {
     pub url: String,
     /// 实际拿到的音质（请求的音质不可用时会自动降级）。
     pub quality: Quality,
+    /// 加密音源的密钥，由调用方交给本机音频中转。
+    pub ekey: Option<String>,
+}
+
+impl std::fmt::Debug for SongUrl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SongUrl")
+            .field("quality", &self.quality)
+            .finish_non_exhaustive()
+    }
 }
 
 /// 本地缓存的歌曲文件。
@@ -107,6 +120,13 @@ pub struct Lyric {
     pub lines: Vec<LyricLine>,
     /// 纯文本歌词（没有时间轴），lines 为空时用它。
     pub plain: String,
+}
+
+/// 高潮片段，毫秒。见 docs/qqmusic-chorus-capture.md。
+#[derive(Debug, Clone)]
+pub struct ChorusRange {
+    pub start_ms: u32,
+    pub end_ms: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -413,6 +433,17 @@ pub struct UserInfo {
     pub avatar_url: String,
 }
 
+/// 登录态被服务器拒绝、已自动退出的原因。服务器只回 1000，原因按凭证有效期推断。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SessionEndReason {
+    /// 已过凭证有效期。
+    Expired,
+    /// 有效期内被注销：其他设备登录挤下线、在登录设备管理里删除了本设备、改密码等。
+    Revoked,
+    /// 不知道凭证有效期（Cookie 登录或旧版本保存的登录态）。
+    Unknown,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LoginKind {
     Qq,
@@ -550,15 +581,31 @@ pub struct Comment {
     pub reply_count: u32,
     /// 回复列表里被回复的人，没有就是空字符串。
     pub reply_to: String,
+    /// 评论里的图片，没有就是空字符串。
+    pub pic_url: String,
+    /// 图片的像素尺寸，没有图片或没给尺寸时是 0。
+    pub pic_width: u32,
+    pub pic_height: u32,
 }
 
+/// 评论列表的排序，对应 Android 评论页的推荐 / 最热 / 最新。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CommentSort {
+    /// 需要登录才能翻页，未登录只有第一页。
+    Recommend,
+    Hot,
+    Latest,
+}
+
+/// 一页评论或回复。
 #[derive(Debug, Clone)]
-pub struct CommentPage {
-    /// 只有第一页有。
-    pub hot: Vec<Comment>,
-    pub latest: Vec<Comment>,
+pub struct CommentFeed {
+    pub comments: Vec<Comment>,
+    /// 评论总数；回复列表里是这条评论的回复数。
     pub total: u32,
     pub has_more: bool,
+    /// 取下一页时原样传回，第一页传空字符串。
+    pub cursor: String,
 }
 
 /// 当前账号自己创建的歌单，加歌和红心用。
@@ -570,4 +617,39 @@ pub struct MyPlaylist {
     pub name: String,
     pub cover_url: String,
     pub song_count: u32,
+}
+
+/// 发布页上的一个安装文件。
+#[derive(Debug, Clone)]
+pub struct UpdateAsset {
+    pub name: String,
+    pub size: i64,
+    /// 小写十六进制。
+    pub sha256: String,
+}
+
+/// 发布流程生成的版本清单。
+#[derive(Debug, Clone)]
+pub struct UpdateInfo {
+    /// 发布用的 tag，如 `v1.3.0-beta.1`。
+    pub tag: String,
+    pub prerelease: bool,
+    /// 发布日期，`YYYY-MM-DD`。
+    pub date: String,
+    /// Markdown 格式的更新说明。
+    pub notes: String,
+    pub assets: Vec<UpdateAsset>,
+}
+
+/// 下载更新时推给 Dart 的进度；每次下载以 `Done`、`Corrupted`、`Failed` 或 `Cancelled` 结束。
+#[derive(Debug, Clone)]
+pub enum UpdateEvent {
+    /// 连上了下载源（`GitHub` 或镜像域名）。
+    Connected { source: String },
+    Progress { received: i64, total: i64 },
+    Done,
+    /// 下完的文件和清单里的校验码对不上，已删除。
+    Corrupted,
+    Failed { error: ApiError },
+    Cancelled,
 }

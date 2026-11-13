@@ -1,6 +1,6 @@
+import '../data/song_json.dart';
 import '../src/rust/api/error.dart';
 import 'player_error.dart';
-import 'player_session_store.dart';
 
 List<Object?> encodePlaybackException(Object error) => switch (error) {
   ApiError_NotLoggedIn() => ['notLoggedIn'],
@@ -36,7 +36,7 @@ Object decodePlaybackException(Object? value) => switch (value) {
 
 Object? encodePlayerError(PlayerError? error) => switch (error) {
   PlaybackFailed(:final song, :final cause) => [
-    PlayerSessionStore.songToJson(song),
+    songToJson(song),
     encodePlaybackException(cause),
   ],
   StreamFailed(:final message) => message,
@@ -45,7 +45,7 @@ Object? encodePlayerError(PlayerError? error) => switch (error) {
 
 PlayerError? decodePlayerError(Object? value) => switch (value) {
   [Map<String, dynamic> song, final cause] => PlaybackFailed(
-    PlayerSessionStore.songFromJson(song),
+    songFromJson(song),
     decodePlaybackException(cause),
   ),
   String message => StreamFailed(message),

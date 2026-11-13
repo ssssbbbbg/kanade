@@ -58,7 +58,11 @@ class _SingerBodyState extends State<_SingerBody> {
 
   late final _songs = Pager<Song>(
     (_, offset) async {
-      final next = await api.getSingerSongs(mid: widget.d.mid, begin: offset, num: 30);
+      final next = await api.getSingerSongs(
+        mid: widget.d.mid,
+        begin: offset,
+        num: 30,
+      );
       return (next, offset + next.length < widget.d.songTotal);
     },
     initial: widget.d.songs,
@@ -66,14 +70,20 @@ class _SingerBodyState extends State<_SingerBody> {
   );
   late final _albums = Pager<AlbumBrief>(
     (_, offset) async {
-      final next = await api.getSingerAlbums(mid: widget.d.mid, begin: offset, num: 30);
+      final next = await api.getSingerAlbums(
+        mid: widget.d.mid,
+        begin: offset,
+        num: 30,
+      );
       return (next, offset + next.length < widget.d.albumTotal);
     },
     initial: widget.d.albums,
     hasMore: widget.d.albums.length < widget.d.albumTotal,
   );
 
-  late final Future<List<VideoTag>> _tags = api.getSingerVideoTags(mid: widget.d.mid);
+  late final Future<List<VideoTag>> _tags = api.getSingerVideoTags(
+    mid: widget.d.mid,
+  );
   VideoTag? _tag;
   int _order = 0;
   Pager<VideoBrief>? _videos;
@@ -92,7 +102,11 @@ class _SingerBodyState extends State<_SingerBody> {
   }
 
   void _select(_Tab tab) {
-    keepPinned(_scroll, _marker, MediaQuery.paddingOf(context).top + _barHeight);
+    keepPinned(
+      _scroll,
+      _marker,
+      MediaQuery.paddingOf(context).top + _barHeight,
+    );
     setState(() => _tab = tab);
   }
 
@@ -100,13 +114,24 @@ class _SingerBodyState extends State<_SingerBody> {
     final d = widget.d;
     final order = _order;
     return _videos ??= Pager<VideoBrief>((_, offset) async {
-      final page = await api.getSingerVideos(mid: d.mid, name: d.name, tag: tag, order: order, begin: offset, num: 40);
+      final page = await api.getSingerVideos(
+        mid: d.mid,
+        name: d.name,
+        tag: tag,
+        order: order,
+        begin: offset,
+        num: 40,
+      );
       return (page.videos, offset + page.videos.length < page.total);
     });
   }
 
   void _filterVideos(VoidCallback change) {
-    keepPinned(_scroll, _marker, MediaQuery.paddingOf(context).top + _barHeight);
+    keepPinned(
+      _scroll,
+      _marker,
+      MediaQuery.paddingOf(context).top + _barHeight,
+    );
     setState(() {
       change();
       _videos?.dispose();
@@ -155,8 +180,15 @@ class _SingerBodyState extends State<_SingerBody> {
                   children: [
                     Expanded(
                       child: FilledButton.icon(
-                        style: FilledButton.styleFrom(minimumSize: const Size(0, 46)),
-                        onPressed: d.songs.isEmpty ? null : () => context.read<PlayerController>().playList(d.songs, 0),
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(0, 46),
+                        ),
+                        onPressed: d.songs.isEmpty
+                            ? null
+                            : () => context.read<PlayerController>().playList(
+                                d.songs,
+                                0,
+                              ),
                         icon: const Icon(Icons.play_arrow_rounded),
                         label: Text(l.playAll(d.songs.length)),
                       ),
@@ -168,7 +200,10 @@ class _SingerBodyState extends State<_SingerBody> {
                         child: FollowButton(
                           followed: _followed ?? social.followed,
                           onChanged: (value) async {
-                            await api.setSingerFollowed(mid: d.mid, followed: value);
+                            await api.setSingerFollowed(
+                              mid: d.mid,
+                              followed: value,
+                            );
                             if (mounted) setState(() => _followed = value);
                           },
                         ),
@@ -186,6 +221,8 @@ class _SingerBodyState extends State<_SingerBody> {
                 child: Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: PillRow(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    spacing: 12,
                     children: [
                       for (final (tab, label) in [
                         (_Tab.featured, l.singerFeatured),
@@ -194,7 +231,11 @@ class _SingerBodyState extends State<_SingerBody> {
                         (_Tab.videos, l.searchKindVideo),
                         (_Tab.about, l.singerAbout),
                       ])
-                        Pill(label: label, selected: _tab == tab, onTap: () => _select(tab)),
+                        UnderlineTab(
+                          label: label,
+                          selected: _tab == tab,
+                          onTap: () => _select(tab),
+                        ),
                     ],
                   ),
                 ),
@@ -202,8 +243,19 @@ class _SingerBodyState extends State<_SingerBody> {
             ),
             ...switch (_tab) {
               _Tab.featured => _featured(l),
-              _Tab.songs => [PagedSliver(pager: _songs, itemBuilder: (_, items, i) => SongTile(songs: items, index: i))],
-              _Tab.albums => [PagedSliver(pager: _albums, itemBuilder: (_, items, i) => AlbumTile(items[i]))],
+              _Tab.songs => [
+                PagedSliver(
+                  pager: _songs,
+                  itemBuilder: (_, items, i) =>
+                      SongTile(songs: items, index: i),
+                ),
+              ],
+              _Tab.albums => [
+                PagedSliver(
+                  pager: _albums,
+                  itemBuilder: (_, items, i) => AlbumTile(items[i]),
+                ),
+              ],
               _Tab.videos => [_videoSlivers(l)],
               _Tab.about => _about(l, social),
             },
@@ -261,7 +313,12 @@ class _SingerBodyState extends State<_SingerBody> {
           return SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(32),
-              child: Center(child: Text(l.loadFailed(errorText(l, snap.error!)), textAlign: TextAlign.center)),
+              child: Center(
+                child: Text(
+                  l.loadFailed(errorText(l, snap.error!)),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
           );
         }
@@ -280,6 +337,7 @@ class _SingerBodyState extends State<_SingerBody> {
           );
         }
         final tag = (_tag ?? tags.first).id;
+        final scheme = Theme.of(context).colorScheme;
         return SliverMainAxisGroup(
           slivers: [
             SliverToBoxAdapter(
@@ -290,21 +348,56 @@ class _SingerBodyState extends State<_SingerBody> {
                     Expanded(
                       child: PillRow(
                         padding: const EdgeInsets.only(left: 20, right: 8),
+                        spacing: 4,
                         children: [
                           for (final t in tags)
-                            Pill(label: t.name, selected: tag == t.id, onTap: () => _filterVideos(() => _tag = t)),
+                            Pill(
+                              label: t.name,
+                              selected: tag == t.id,
+                              small: true,
+                              onTap: () => _filterVideos(() => _tag = t),
+                            ),
                         ],
                       ),
                     ),
-                    Pill(label: l.newest, selected: _order == 0, onTap: () => _filterVideos(() => _order = 0)),
-                    const SizedBox(width: 6),
-                    Pill(label: l.hottest, selected: _order == 1, onTap: () => _filterVideos(() => _order = 1)),
-                    const SizedBox(width: 20),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => _filterVideos(() => _order = 1 - _order),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 5,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.swap_vert_rounded,
+                              size: 16,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              _order == 0 ? l.newest : l.hottest,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: scheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                   ],
                 ),
               ),
             ),
-            PagedSliver(pager: _videoPager(tag), itemBuilder: (_, items, i) => VideoTile(items[i])),
+            PagedSliver(
+              pager: _videoPager(tag),
+              itemBuilder: (_, items, i) => VideoTile(items[i]),
+            ),
           ],
         );
       },
@@ -323,7 +416,12 @@ class _SingerBodyState extends State<_SingerBody> {
             children: [
               Row(
                 children: [
-                  _StatCard(value: social == null ? '-' : formatCount(l, social.fansCount.toInt()), label: l.statFans),
+                  _StatCard(
+                    value: social == null
+                        ? '-'
+                        : formatCount(l, social.fansCount.toInt()),
+                    label: l.statFans,
+                  ),
                   const SizedBox(width: 8),
                   _StatCard(value: '${d.songTotal}', label: l.tabSongs),
                   const SizedBox(width: 8),
@@ -333,20 +431,39 @@ class _SingerBodyState extends State<_SingerBody> {
               if (social != null && social.guardTitle.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 DecoratedBox(
-                  decoration: BoxDecoration(color: scheme.surfaceContainer, borderRadius: BorderRadius.circular(14)),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
                     child: Row(
                       children: [
-                        Icon(Icons.shield_outlined, size: 22, color: scheme.onSurfaceVariant),
+                        Icon(
+                          Icons.shield_outlined,
+                          size: 22,
+                          color: scheme.onSurfaceVariant,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(l.singerGuard, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+                              Text(
+                                l.singerGuard,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
                               const SizedBox(height: 2),
-                              Text(social.guardTitle, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                              Text(
+                                social.guardTitle,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -356,11 +473,21 @@ class _SingerBodyState extends State<_SingerBody> {
                 ),
               ],
               const SizedBox(height: 22),
-              Text(l.singerBio, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+              Text(
+                l.singerBio,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const SizedBox(height: 10),
               SelectableText(
                 d.description.isEmpty ? l.noItems : d.description,
-                style: TextStyle(fontSize: 14, height: 1.75, color: scheme.onSurface.withValues(alpha: 0.8)),
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.75,
+                  color: scheme.onSurface.withValues(alpha: 0.8),
+                ),
               ),
             ],
           ),
@@ -373,7 +500,13 @@ class _SingerBodyState extends State<_SingerBody> {
 
 /// 顶部大图；往上滚时缩成一条，左边让出返回按钮，显示小头像和名字。
 class _Hero extends SliverPersistentHeaderDelegate {
-  _Hero({required this.d, required this.subtitle, required this.top, required this.maxHeight, required this.minHeight});
+  _Hero({
+    required this.d,
+    required this.subtitle,
+    required this.top,
+    required this.maxHeight,
+    required this.minHeight,
+  });
 
   final SingerDetail d;
   final String subtitle;
@@ -388,7 +521,11 @@ class _Hero extends SliverPersistentHeaderDelegate {
   double get minExtent => minHeight;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final scheme = Theme.of(context).colorScheme;
     final t = (shrinkOffset / (maxHeight - minHeight)).clamp(0.0, 1.0);
     return Stack(
@@ -402,7 +539,10 @@ class _Hero extends SliverPersistentHeaderDelegate {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               stops: const [0.4, 1],
-              colors: [scheme.surface.withValues(alpha: t), scheme.surface],
+              colors: [
+                scheme.surface.withValues(alpha: t),
+                scheme.surface,
+              ],
             ),
           ),
         ),
@@ -419,11 +559,21 @@ class _Hero extends SliverPersistentHeaderDelegate {
                   d.name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, height: 1.15),
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900,
+                    height: 1.15,
+                  ),
                 ),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 6),
-                  Text(subtitle, style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -445,7 +595,10 @@ class _Hero extends SliverPersistentHeaderDelegate {
                     d.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -458,7 +611,11 @@ class _Hero extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_Hero old) =>
-      old.d != d || old.subtitle != subtitle || old.top != top || old.maxHeight != maxHeight || old.minHeight != minHeight;
+      old.d != d ||
+      old.subtitle != subtitle ||
+      old.top != top ||
+      old.maxHeight != maxHeight ||
+      old.minHeight != minHeight;
 }
 
 class _StatCard extends StatelessWidget {
@@ -472,15 +629,28 @@ class _StatCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Expanded(
       child: DecoratedBox(
-        decoration: BoxDecoration(color: scheme.surfaceContainer, borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(14),
+        ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value, maxLines: 1, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              Text(
+                value,
+                maxLines: 1,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(label, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+              Text(
+                label,
+                style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+              ),
             ],
           ),
         ),
@@ -514,7 +684,11 @@ class _AlbumCard extends StatelessWidget {
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 2),
-            Text(album.publishDate, maxLines: 1, style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
+            Text(
+              album.publishDate,
+              maxLines: 1,
+              style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+            ),
           ],
         ),
       ),
@@ -537,7 +711,12 @@ class AlbumTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
       ),
-      subtitle: Text([album.singerName, album.publishDate].where((s) => s.isNotEmpty).join(' · ')),
+      subtitle: Text(
+        [
+          album.singerName,
+          album.publishDate,
+        ].where((s) => s.isNotEmpty).join(' · '),
+      ),
       onTap: () => openPage(context, AlbumPage.route(album.mid, album.name)),
     );
   }

@@ -5,10 +5,22 @@ import 'package:flutter/widgets.dart';
 /// Windows 上鼠标滚轮一格不再瞬间跳一段，而是减速滑过去；连着滚几格时目标往前累加。
 /// 触控板（走拖动手势）、拖滚动条、其他平台都照旧。
 class SmoothScrollController extends ScrollController {
-  SmoothScrollController({super.initialScrollOffset, super.keepScrollOffset, super.debugLabel});
+  SmoothScrollController({
+    super.initialScrollOffset,
+    super.keepScrollOffset,
+    super.debugLabel,
+    this.blockWheel,
+  });
+
+  /// 返回 true 时这一下滚轮不滚列表，比如弹窗还在往上升。
+  final bool Function()? blockWheel;
 
   @override
-  ScrollPosition createScrollPosition(ScrollPhysics physics, ScrollContext context, ScrollPosition? oldPosition) {
+  ScrollPosition createScrollPosition(
+    ScrollPhysics physics,
+    ScrollContext context,
+    ScrollPosition? oldPosition,
+  ) {
     if (defaultTargetPlatform != TargetPlatform.windows) {
       return super.createScrollPosition(physics, context, oldPosition);
     }
@@ -19,6 +31,7 @@ class SmoothScrollController extends ScrollController {
       keepScrollOffset: keepScrollOffset,
       oldPosition: oldPosition,
       debugLabel: debugLabel,
+      blockWheel: blockWheel,
     );
   }
 }
@@ -27,7 +40,8 @@ class SmoothScrollController extends ScrollController {
 class SmoothScroll extends StatefulWidget {
   const SmoothScroll({super.key, required this.builder});
 
-  final Widget Function(BuildContext context, ScrollController controller) builder;
+  final Widget Function(BuildContext context, ScrollController controller)
+  builder;
 
   @override
   State<SmoothScroll> createState() => _SmoothScrollState();
@@ -54,7 +68,10 @@ class _SmoothScrollPosition extends ScrollPositionWithSingleContext {
     super.keepScrollOffset,
     super.oldPosition,
     super.debugLabel,
+    this.blockWheel,
   });
+
+  final bool Function()? blockWheel;
 
   static const _duration = Duration(milliseconds: 220);
 
@@ -64,6 +81,7 @@ class _SmoothScrollPosition extends ScrollPositionWithSingleContext {
 
   @override
   void pointerScroll(double delta) {
+    if (blockWheel?.call() ?? false) return;
     if (delta == 0.0) return super.pointerScroll(delta);
     final from = activity == _wheel ? _target : pixels;
     final to = (from + delta).clamp(minScrollExtent, maxScrollExtent);
@@ -79,13 +97,22 @@ class _SmoothScrollPosition extends ScrollPositionWithSingleContext {
         vsync: context.vsync,
       ),
     );
-    updateUserScrollDirection(delta > 0.0 ? ScrollDirection.reverse : ScrollDirection.forward);
+    updateUserScrollDirection(
+      delta > 0.0 ? ScrollDirection.reverse : ScrollDirection.forward,
+    );
   }
 }
 
 /// 滚轮滑动时不挡住鼠标，悬停效果和点击照常。
 class _WheelActivity extends DrivenScrollActivity {
-  _WheelActivity(super.delegate, {required super.from, required super.to, required super.duration, required super.curve, required super.vsync});
+  _WheelActivity(
+    super.delegate, {
+    required super.from,
+    required super.to,
+    required super.duration,
+    required super.curve,
+    required super.vsync,
+  });
 
   @override
   bool get shouldIgnorePointer => false;

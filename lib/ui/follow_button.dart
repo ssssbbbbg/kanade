@@ -7,7 +7,11 @@ import 'toast.dart';
 
 /// 成功后由页面更新关注状态；提交期间禁用，失败保留原状态。
 class FollowButton extends StatefulWidget {
-  const FollowButton({super.key, required this.followed, required this.onChanged});
+  const FollowButton({
+    super.key,
+    required this.followed,
+    required this.onChanged,
+  });
 
   final bool followed;
   final Future<void> Function(bool) onChanged;
@@ -29,7 +33,13 @@ class _FollowButtonState extends State<FollowButton> {
     try {
       await widget.onChanged(!widget.followed);
     } catch (e) {
-      if (mounted) showToast(context, l.actionFailed(errorText(l, e)), kind: ToastKind.error);
+      if (mounted) {
+        showToast(
+          context,
+          l.actionFailed(errorText(l, e)),
+          kind: ToastKind.error,
+        );
+      }
     } finally {
       if (mounted) setState(() => _pending = false);
     }

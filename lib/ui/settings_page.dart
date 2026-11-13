@@ -10,11 +10,14 @@ import '../settings/locale_controller.dart';
 import '../settings/theme_controller.dart';
 import '../src/rust/api/music.dart' as api;
 import '../src/rust/api/types.dart';
+import '../update/app_update.dart';
 import 'foryou_settings_page.dart';
 import 'glass_dropdown.dart';
+import 'kanade_dialog.dart';
 import 'smooth_scroll.dart';
 import 'theme_reveal.dart';
 import 'toast.dart';
+import 'update_dialog.dart';
 import 'widgets.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -27,15 +30,22 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
-/// 设置里能选的默认音质（播放器能播的常用档位）。
-const _qualities = [
+/// 设置里能选的默认音质，按官方顺序从免费到 SVIP 排列；缺解码器的档位不显示。
+final _qualities = [
   Quality.low,
   Quality.standard,
+  Quality.aicodec,
   Quality.high,
   Quality.lossless,
   Quality.hires,
+  Quality.dolby,
+  Quality.atmos51,
+  Quality.atmos71,
+  Quality.atmos,
   Quality.master,
-];
+  Quality.ra360,
+  Quality.dts,
+].where((q) => api.qualitySupported(quality: q)).toList();
 
 /// 切歌淡入淡出的档位（秒），0 表示关闭。
 const _fades = [0, 1, 2, 3, 5];
@@ -89,11 +99,16 @@ class _SettingsPageState extends State<SettingsPage> {
   int? _audioSize;
   int? _apiSize;
   final _scroll = SmoothScrollController();
-  final _sectionKeys = List.generate(4, (_) => GlobalKey());
+  final _sectionKeys = List.generate(5, (_) => GlobalKey());
   final _themeIconKeys = {for (final m in ThemeMode.values) m: GlobalKey()};
   final _qualityMenu = GlobalKey<GlassDropdownState<Quality>>();
   final _languageMenu = GlobalKey<GlassDropdownState<String>>();
   final _limitMenu = GlobalKey<GlassDropdownState<int>>();
+  String? _version;
+  var _checking = false;
+  UpdateCheckResult? _checked;
+  var _preview = AppUpdate.preview;
+  var _mirror = AppUpdate.mirror;
   var _sectionCount = 0;
   var _current = 0;
   var _wide = false;
@@ -106,6 +121,27 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _scroll.addListener(_spy);
     _loadSizes();
+    AppUpdate.currentVersion().then((v) {
+      if (mounted) setState(() => _version = v);
+    });
+  }
+
+  Future<void> _checkUpdate() async {
+    if (_checking) return;
+    setState(() => _checking = true);
+    final result = await checkForUpdate(context, manual: true);
+    if (!mounted) return;
+    setState(() {
+      _checking = false;
+      _checked = result;
+    });
+    if (result == UpdateCheckResult.failed) {
+      showToast(
+        context,
+        AppLocalizations.of(context).updateCheckFailed,
+        kind: ToastKind.error,
+      );
+    }
   }
 
   @override
@@ -176,26 +212,26 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<bool> _confirm(
     String text,
     String action, {
+    required IconData icon,
     bool danger = false,
   }) async {
     final l = AppLocalizations.of(context);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        content: Text(text),
+    final ok = await showKanadeDialog<bool>(
+      context,
+      builder: (context) => KanadeDialog(
+        icon: icon,
+        danger: danger,
+        title: text,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l.cancel),
-          ),
-          FilledButton(
-            style: danger
-                ? FilledButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.error,
-                  )
-                : null,
+          KanadeDialogAction(
+            label: action,
+            primary: true,
+            danger: danger,
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(action),
+          ),
+          KanadeDialogAction(
+            label: l.cancel,
+            onPressed: () => Navigator.of(context).pop(false),
           ),
         ],
       ),
@@ -224,27 +260,31 @@ class _SettingsPageState extends State<SettingsPage> {
     final controller = TextEditingController(
       text: _limitMb > 0 ? '$_limitMb' : '',
     );
-    return showDialog<int>(
-      context: context,
+    return showKanadeDialog<int>(
+      context,
       builder: (context) {
         void submit() =>
             Navigator.of(context).pop(int.tryParse(controller.text));
-        return AlertDialog(
-          title: Text(l.audioCacheCustomTitle),
+        return KanadeDialog(
+          icon: Icons.sd_storage_outlined,
+          title: l.audioCacheCustomTitle,
           content: TextField(
             controller: controller,
             autofocus: true,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(suffixText: l.audioCacheCustomUnit),
+            decoration: kanadeFieldDecoration(
+              context,
+              suffix: l.audioCacheCustomUnit,
+            ),
             onSubmitted: (_) => submit(),
           ),
           actions: [
-            TextButton(
+            KanadeDialogAction(label: l.ok, primary: true, onPressed: submit),
+            KanadeDialogAction(
+              label: l.cancel,
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(l.cancel),
             ),
-            FilledButton(onPressed: submit, child: Text(l.ok)),
           ],
         );
       },
@@ -254,7 +294,13 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _clearAudio() async {
     final l = AppLocalizations.of(context);
     final player = context.read<PlayerController>();
-    if (!await _confirm(l.clearAudioCacheConfirm, l.clear)) return;
+    if (!await _confirm(
+      l.clearAudioCacheConfirm,
+      l.clear,
+      icon: Icons.music_off_outlined,
+    )) {
+      return;
+    }
     await player.clearAudioCache();
     if (!mounted) return;
     await _loadSizes();
@@ -263,7 +309,13 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _clearApi() async {
     final l = AppLocalizations.of(context);
-    if (!await _confirm(l.clearApiCacheConfirm, l.clear)) return;
+    if (!await _confirm(
+      l.clearApiCacheConfirm,
+      l.clear,
+      icon: Icons.cleaning_services_outlined,
+    )) {
+      return;
+    }
     await api.clearCache();
     await _loadSizes();
     if (mounted) showToast(context, l.cacheCleared, kind: ToastKind.success);
@@ -271,7 +323,14 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _logout() async {
     final l = AppLocalizations.of(context);
-    if (!await _confirm(l.logoutConfirm, l.logout, danger: true)) return;
+    if (!await _confirm(
+      l.logoutConfirm,
+      l.logout,
+      icon: Icons.logout_rounded,
+      danger: true,
+    )) {
+      return;
+    }
     if (!mounted) return;
     await context.read<AuthController>().logout();
     if (mounted) Navigator.of(context).pop();
@@ -518,6 +577,50 @@ class _SettingsPageState extends State<SettingsPage> {
             ],
           ),
         ),
+      (
+        title: l.settingsAbout,
+        icon: Icons.info_outline,
+        rows: [
+          _Item(
+            icon: Icons.system_update_alt_rounded,
+            title: l.checkUpdate,
+            hint: _version == null ? null : l.currentVersion("v$_version"),
+            value: _Value(
+              _checking
+                  ? l.updateChecking
+                  : _checked == UpdateCheckResult.upToDate
+                  ? l.upToDate
+                  : "",
+            ),
+            onTap: _checkUpdate,
+          ),
+          _Item(
+            icon: Icons.science_outlined,
+            title: l.updatePreview,
+            hint: l.updatePreviewHint,
+            onTap: () =>
+                setState(() => AppUpdate.preview = _preview = !_preview),
+            trailing: Switch(
+              value: _preview,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              onChanged: (v) =>
+                  setState(() => AppUpdate.preview = _preview = v),
+            ),
+          ),
+          _Item(
+            icon: Icons.public,
+            title: l.updateMirror,
+            hint: l.updateMirrorHint,
+            onTap: () => setState(() => AppUpdate.mirror = _mirror = !_mirror),
+            trailing: Switch(
+              value: _mirror,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              onChanged: (v) => setState(() => AppUpdate.mirror = _mirror = v),
+            ),
+          ),
+        ],
+        after: null,
+      ),
     ];
     _sectionCount = sections.length;
     if (_current >= _sectionCount) _current = _sectionCount - 1;

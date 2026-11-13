@@ -40,3 +40,5 @@ Name: "{autodesktop}\Kanade"; Filename: "{app}\kanade.exe"; AppUserModelID: "Luc
 
 [Run]
 Filename: "{app}\kanade.exe"; Description: "{cm:LaunchProgram,Kanade}"; Flags: nowait postinstall skipifsilent
+; 应用内更新用 /SILENT 运行安装包，装完自动打开新版本
+Filename: "{app}\kanade.exe"; Flags: nowait runasoriginaluser; Check: WizardSilent

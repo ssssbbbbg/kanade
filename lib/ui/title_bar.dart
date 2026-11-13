@@ -18,7 +18,10 @@ Future<void> setupWindow() async {
   if (!hasCustomTitleBar) return;
   await windowManager.ensureInitialized();
   await windowManager.waitUntilReadyToShow(
-    const WindowOptions(titleBarStyle: TitleBarStyle.hidden, minimumSize: Size(400, 560)),
+    const WindowOptions(
+      titleBarStyle: TitleBarStyle.hidden,
+      minimumSize: Size(400, 560),
+    ),
     () async {
       await windowManager.show();
       await windowManager.focus();
@@ -79,7 +82,9 @@ class WindowFrame extends StatelessWidget {
     return Stack(
       children: [
         MediaQuery(
-          data: mq.copyWith(padding: mq.padding.copyWith(top: mq.padding.top + titleBarHeight)),
+          data: mq.copyWith(
+            padding: mq.padding.copyWith(top: mq.padding.top + titleBarHeight),
+          ),
           child: child,
         ),
         // MaterialApp.builder 在 Navigator 外面，没有 Overlay，按钮的 Tooltip 需要自己给一个。
@@ -92,7 +97,10 @@ class WindowFrame extends StatelessWidget {
                   alignment: Alignment.topCenter,
                   child: SizedBox(
                     height: titleBarHeight,
-                    child: Material(type: MaterialType.transparency, child: _TitleBar()),
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: _TitleBar(),
+                    ),
                   ),
                 ),
               ),
@@ -145,8 +153,11 @@ class _TitleBarState extends State<_TitleBar> with WindowListener {
     // ignore: invalid_use_of_protected_member
     final layer = view.layer;
     if (layer == null) return;
-    final style = layer.find<SystemUiOverlayStyle>(Offset(view.size.width / 2, titleBarHeight / 2));
-    final b = style?.statusBarIconBrightness ??
+    final style = layer.find<SystemUiOverlayStyle>(
+      Offset(view.size.width / 2, titleBarHeight / 2),
+    );
+    final b =
+        style?.statusBarIconBrightness ??
         switch (style?.statusBarBrightness) {
           Brightness.dark => Brightness.light,
           Brightness.light => Brightness.dark,
@@ -169,7 +180,8 @@ class _TitleBarState extends State<_TitleBar> with WindowListener {
   @override
   void onWindowBlur() => setState(() => _focused = false);
 
-  void _toggleMaximize() => _maximized ? windowManager.unmaximize() : windowManager.maximize();
+  void _toggleMaximize() =>
+      _maximized ? windowManager.unmaximize() : windowManager.maximize();
 
   @override
   Widget build(BuildContext context) {
@@ -179,8 +191,7 @@ class _TitleBarState extends State<_TitleBar> with WindowListener {
       Brightness.light => Colors.white,
       Brightness.dark => Colors.black,
       null => theme.colorScheme.onSurface,
-    }
-        .withValues(alpha: _focused ? 0.9 : 0.4);
+    }.withValues(alpha: _focused ? 0.9 : 0.4);
 
     final buttons = Row(
       mainAxisSize: MainAxisSize.min,
@@ -312,29 +323,56 @@ class _GlyphPainter extends CustomPainter {
     const s = 5.0;
     switch (glyph) {
       case _Glyph.minimize:
-        canvas.drawLine(c + const Offset(-s, 0.5), c + const Offset(s, 0.5), paint);
+        canvas.drawLine(
+          c + const Offset(-s, 0.5),
+          c + const Offset(s, 0.5),
+          paint,
+        );
       case _Glyph.maximize:
         canvas.drawRRect(
-          RRect.fromRectAndRadius(Rect.fromCenter(center: c, width: s * 2, height: s * 2), const Radius.circular(1.5)),
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(center: c, width: s * 2, height: s * 2),
+            const Radius.circular(1.5),
+          ),
           paint,
         );
       case _Glyph.restore:
-        final front = Rect.fromLTWH(c.dx - s, c.dy - s + 2, s * 2 - 2, s * 2 - 2);
-        canvas.drawRRect(RRect.fromRectAndRadius(front, const Radius.circular(1.5)), paint);
+        final front = Rect.fromLTWH(
+          c.dx - s,
+          c.dy - s + 2,
+          s * 2 - 2,
+          s * 2 - 2,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(front, const Radius.circular(1.5)),
+          paint,
+        );
         canvas.drawPath(
           Path()
             ..moveTo(c.dx - s + 2, c.dy - s)
             ..lineTo(c.dx + s - 1.5, c.dy - s)
-            ..arcToPoint(Offset(c.dx + s, c.dy - s + 1.5), radius: const Radius.circular(1.5))
+            ..arcToPoint(
+              Offset(c.dx + s, c.dy - s + 1.5),
+              radius: const Radius.circular(1.5),
+            )
             ..lineTo(c.dx + s, c.dy + s - 2),
           paint,
         );
       case _Glyph.close:
-        canvas.drawLine(c + const Offset(-s, -s), c + const Offset(s, s), paint);
-        canvas.drawLine(c + const Offset(s, -s), c + const Offset(-s, s), paint);
+        canvas.drawLine(
+          c + const Offset(-s, -s),
+          c + const Offset(s, s),
+          paint,
+        );
+        canvas.drawLine(
+          c + const Offset(s, -s),
+          c + const Offset(-s, s),
+          paint,
+        );
     }
   }
 
   @override
-  bool shouldRepaint(_GlyphPainter old) => old.glyph != glyph || old.color != color;
+  bool shouldRepaint(_GlyphPainter old) =>
+      old.glyph != glyph || old.color != color;
 }

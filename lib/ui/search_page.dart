@@ -37,7 +37,13 @@ class _Results {
   bool loading = false;
   Object? error;
 
-  int get length => songs.length + singers.length + albums.length + playlists.length + videos.length + users.length;
+  int get length =>
+      songs.length +
+      singers.length +
+      albums.length +
+      playlists.length +
+      videos.length +
+      users.length;
 
   /// 每次换成新列表：歌曲列表会交给播放队列，不能在原列表上追加。
   void add(SearchResult r) {
@@ -60,7 +66,9 @@ class _SearchPageState extends State<SearchPage> {
   final _controller = TextEditingController();
   final _hotScroll = SmoothScrollController();
   final _suggestScroll = SmoothScrollController();
-  final _scrolls = {for (final k in SearchKind.values) k: SmoothScrollController()};
+  final _scrolls = {
+    for (final k in SearchKind.values) k: SmoothScrollController(),
+  };
   String _keyword = '';
   SearchKind _kind = SearchKind.song;
   final _results = <SearchKind, _Results>{};
@@ -114,7 +122,9 @@ class _SearchPageState extends State<SearchPage> {
       try {
         final list = await api.getSearchSuggestions(query: query);
         // 只保留和输入框当前内容对应的结果，丢弃过期的请求
-        if (mounted && _typing && _controller.text.trim() == query) setState(() => _suggestions = list);
+        if (mounted && _typing && _controller.text.trim() == query) {
+          setState(() => _suggestions = list);
+        }
       } catch (_) {
         // 联想失败不影响直接回车搜索
       }
@@ -165,7 +175,12 @@ class _SearchPageState extends State<SearchPage> {
     final keyword = _keyword;
     setState(() => r.loading = true);
     try {
-      final page = await api.search(keyword: keyword, kind: kind, page: r.page + 1, pageSize: _pageSize);
+      final page = await api.search(
+        keyword: keyword,
+        kind: kind,
+        page: r.page + 1,
+        pageSize: _pageSize,
+      );
       // 等待期间换了关键词，这份结果已经被清掉了
       if (!mounted || keyword != _keyword || _results[kind] != r) return;
       setState(() => r.add(page));
@@ -225,14 +240,14 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   String _kindLabel(AppLocalizations l, SearchKind kind) => switch (kind) {
-        SearchKind.song => l.searchKindSong,
-        SearchKind.singer => l.searchKindSinger,
-        SearchKind.album => l.searchKindAlbum,
-        SearchKind.playlist => l.searchKindPlaylist,
-        SearchKind.video => l.searchKindVideo,
-        SearchKind.lyric => l.searchKindLyric,
-        SearchKind.user => l.searchKindUser,
-      };
+    SearchKind.song => l.searchKindSong,
+    SearchKind.singer => l.searchKindSinger,
+    SearchKind.album => l.searchKindAlbum,
+    SearchKind.playlist => l.searchKindPlaylist,
+    SearchKind.video => l.searchKindVideo,
+    SearchKind.lyric => l.searchKindLyric,
+    SearchKind.user => l.searchKindUser,
+  };
 
   Widget _kindBar(AppLocalizations l) {
     return SingleChildScrollView(
@@ -243,7 +258,11 @@ class _SearchPageState extends State<SearchPage> {
           for (final kind in SearchKind.values)
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 8),
-              child: Pill(label: _kindLabel(l, kind), selected: kind == _kind, onTap: () => _selectKind(kind)),
+              child: Pill(
+                label: _kindLabel(l, kind),
+                selected: kind == _kind,
+                onTap: () => _selectKind(kind),
+              ),
             ),
         ],
       ),
@@ -255,10 +274,20 @@ class _SearchPageState extends State<SearchPage> {
     if (r.length == 0) {
       if (r.error != null) {
         return Center(
-          child: TextButton(onPressed: _retry, child: Text(l.searchFailed(errorText(l, r.error!)), textAlign: TextAlign.center)),
+          child: TextButton(
+            onPressed: _retry,
+            child: Text(
+              l.searchFailed(errorText(l, r.error!)),
+              textAlign: TextAlign.center,
+            ),
+          ),
         );
       }
-      return Center(child: r.loading || r.page == 0 ? const PageLoading() : Text(l.searchNoResults));
+      return Center(
+        child: r.loading || r.page == 0
+            ? const PageLoading()
+            : Text(l.searchNoResults),
+      );
     }
     return NotificationListener<ScrollNotification>(
       onNotification: (n) {
@@ -269,14 +298,21 @@ class _SearchPageState extends State<SearchPage> {
         key: ValueKey(_kind),
         controller: _scrolls[_kind],
         itemCount: r.length + 1,
-        itemBuilder: (context, i) => i == r.length ? _footer(l, r) : _item(l, r, i),
+        itemBuilder: (context, i) =>
+            i == r.length ? _footer(l, r) : _item(l, r, i),
       ),
     );
   }
 
   Widget _footer(AppLocalizations l, _Results r) {
     if (r.error != null) {
-      return ListTile(title: Text(l.loadFailed(errorText(l, r.error!)), textAlign: TextAlign.center), onTap: _retry);
+      return ListTile(
+        title: Text(
+          l.loadFailed(errorText(l, r.error!)),
+          textAlign: TextAlign.center,
+        ),
+        onTap: _retry,
+      );
     }
     final songs = _kind == SearchKind.song || _kind == SearchKind.lyric;
     return Padding(
@@ -284,7 +320,9 @@ class _SearchPageState extends State<SearchPage> {
       child: Center(
         child: r.loading
             ? const CircularProgressIndicator()
-            : Text(songs ? l.searchTotal(r.total) : l.searchTotalItems(r.total)),
+            : Text(
+                songs ? l.searchTotal(r.total) : l.searchTotalItems(r.total),
+              ),
       ),
     );
   }
@@ -294,12 +332,21 @@ class _SearchPageState extends State<SearchPage> {
       case SearchKind.song:
         return SongTile(songs: r.songs, index: i);
       case SearchKind.lyric:
-        return _LyricTile(songs: r.songs, index: i, snippet: r.lyricSnippets[i]);
+        return _LyricTile(
+          songs: r.songs,
+          index: i,
+          snippet: r.lyricSnippets[i],
+        );
       case SearchKind.singer:
         final s = r.singers[i];
         return ListTile(
           leading: Cover(s.avatarUrl, size: 52, radius: 26),
-          title: Text(s.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          title: Text(
+            s.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
           subtitle: Text(l.singerStats(s.songCount, s.albumCount)),
           onTap: () => openPage(context, SingerPage.route(s.mid, s.name)),
         );
@@ -309,12 +356,18 @@ class _SearchPageState extends State<SearchPage> {
         final p = r.playlists[i];
         return ListTile(
           leading: Cover(p.coverUrl, size: 52, radius: 12),
-          title: Text(p.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          title: Text(
+            p.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
           subtitle: Text(
             [
               l.songCount(p.songCount),
               if (p.creator.isNotEmpty) p.creator,
-              if (p.playCount > BigInt.zero) '▶ ${formatCount(l, p.playCount.toInt())}',
+              if (p.playCount > BigInt.zero)
+                '▶ ${formatCount(l, p.playCount.toInt())}',
             ].join(' · '),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -327,14 +380,22 @@ class _SearchPageState extends State<SearchPage> {
         final u = r.users[i];
         return ListTile(
           leading: Cover(u.avatarUrl, size: 52, radius: 26),
-          title: Text(u.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          title: Text(
+            u.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
           subtitle: Text(
             u.description.isNotEmpty
                 ? u.description
                 // 歌手账号没有歌单标签，不显示“歌单 0”
                 : u.playlistCount > 0
-                    ? l.userBriefStats(formatCount(l, u.fansCount.toInt()), u.playlistCount)
-                    : l.userFans(formatCount(l, u.fansCount.toInt())),
+                ? l.userBriefStats(
+                    formatCount(l, u.fansCount.toInt()),
+                    u.playlistCount,
+                  )
+                : l.userFans(formatCount(l, u.fansCount.toInt())),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -355,9 +416,17 @@ class _SearchPageState extends State<SearchPage> {
               SuggestionKind.album => Icons.album_outlined,
             }),
             title: Text(s.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle: s.subtitle.isEmpty ? null : Text(s.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+            subtitle: s.subtitle.isEmpty
+                ? null
+                : Text(
+                    s.subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
             // 歌曲/专辑带上歌手名一起搜，结果更准
-            onTap: () => _searchFor(s.subtitle.isEmpty ? s.title : '${s.title} ${s.subtitle}'),
+            onTap: () => _searchFor(
+              s.subtitle.isEmpty ? s.title : '${s.title} ${s.subtitle}',
+            ),
           ),
       ],
     );
@@ -367,13 +436,17 @@ class _SearchPageState extends State<SearchPage> {
     final hot = _hot;
     if (hot == null) {
       // 热搜加载失败时退回原来的提示，不影响搜索
-      return Center(child: _hotError != null ? Text(l.searchPrompt) : const PageLoading());
+      return Center(
+        child: _hotError != null ? Text(l.searchPrompt) : const PageLoading(),
+      );
     }
     final theme = Theme.of(context);
     return ListView(
       controller: _hotScroll,
       // 自己指定 padding 会盖掉 ListView 自动加的底部留白，要把玻璃条的高度算进去
-      padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom + 16),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.paddingOf(context).bottom + 16,
+      ),
       children: [
         if (hot.recommended.isNotEmpty) ...[
           _sectionTitle(l.searchRecommended),
@@ -384,7 +457,10 @@ class _SearchPageState extends State<SearchPage> {
               runSpacing: 8,
               children: [
                 for (final k in hot.recommended.take(12))
-                  ActionChip(label: Text(k.title), onPressed: () => _searchFor(k.query)),
+                  ActionChip(
+                    label: Text(k.title),
+                    onPressed: () => _searchFor(k.query),
+                  ),
               ],
             ),
           ),
@@ -399,7 +475,9 @@ class _SearchPageState extends State<SearchPage> {
                 '${i + 1}',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: i < 3 ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                  color: i < 3
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -409,7 +487,14 @@ class _SearchPageState extends State<SearchPage> {
             title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Flexible(flex: 3, child: Text(k.title, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                Flexible(
+                  flex: 3,
+                  child: Text(
+                    k.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
                 if (k.description.isNotEmpty)
                   Flexible(
                     child: Padding(
@@ -418,7 +503,9 @@ class _SearchPageState extends State<SearchPage> {
                         k.description,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   ),
@@ -431,14 +518,18 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _sectionTitle(String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        child: Text(text, style: Theme.of(context).textTheme.titleMedium),
-      );
+    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+    child: Text(text, style: Theme.of(context).textTheme.titleMedium),
+  );
 }
 
 /// 歌曲行下面带一行命中的歌词。
 class _LyricTile extends StatelessWidget {
-  const _LyricTile({required this.songs, required this.index, required this.snippet});
+  const _LyricTile({
+    required this.songs,
+    required this.index,
+    required this.snippet,
+  });
 
   final List<Song> songs;
   final int index;
@@ -460,7 +551,11 @@ class _LyricTile extends StatelessWidget {
             snippet,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 13, height: 1.4, color: scheme.onSurfaceVariant),
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              color: scheme.onSurfaceVariant,
+            ),
           ),
         ),
       ],

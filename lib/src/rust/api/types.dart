@@ -4,12 +4,13 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import 'error.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'types.freezed.dart';
 
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`
 
 class AlbumBrief {
   final String mid;
@@ -120,6 +121,25 @@ class CachedAudio {
           quality == other.quality;
 }
 
+/// 高潮片段，毫秒。见 docs/qqmusic-chorus-capture.md。
+class ChorusRange {
+  final int startMs;
+  final int endMs;
+
+  const ChorusRange({required this.startMs, required this.endMs});
+
+  @override
+  int get hashCode => startMs.hashCode ^ endMs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChorusRange &&
+          runtimeType == other.runtimeType &&
+          startMs == other.startMs &&
+          endMs == other.endMs;
+}
+
 class Comment {
   final String id;
 
@@ -137,6 +157,13 @@ class Comment {
   /// 回复列表里被回复的人，没有就是空字符串。
   final String replyTo;
 
+  /// 评论里的图片，没有就是空字符串。
+  final String picUrl;
+
+  /// 图片的像素尺寸，没有图片或没给尺寸时是 0。
+  final int picWidth;
+  final int picHeight;
+
   const Comment({
     required this.id,
     required this.seqNo,
@@ -147,6 +174,9 @@ class Comment {
     required this.praiseCount,
     required this.replyCount,
     required this.replyTo,
+    required this.picUrl,
+    required this.picWidth,
+    required this.picHeight,
   });
 
   @override
@@ -159,7 +189,10 @@ class Comment {
       timeSecs.hashCode ^
       praiseCount.hashCode ^
       replyCount.hashCode ^
-      replyTo.hashCode;
+      replyTo.hashCode ^
+      picUrl.hashCode ^
+      picWidth.hashCode ^
+      picHeight.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -174,36 +207,51 @@ class Comment {
           timeSecs == other.timeSecs &&
           praiseCount == other.praiseCount &&
           replyCount == other.replyCount &&
-          replyTo == other.replyTo;
+          replyTo == other.replyTo &&
+          picUrl == other.picUrl &&
+          picWidth == other.picWidth &&
+          picHeight == other.picHeight;
 }
 
-class CommentPage {
-  /// 只有第一页有。
-  final List<Comment> hot;
-  final List<Comment> latest;
+/// 一页评论或回复。
+class CommentFeed {
+  final List<Comment> comments;
+
+  /// 评论总数；回复列表里是这条评论的回复数。
   final int total;
   final bool hasMore;
 
-  const CommentPage({
-    required this.hot,
-    required this.latest,
+  /// 取下一页时原样传回，第一页传空字符串。
+  final String cursor;
+
+  const CommentFeed({
+    required this.comments,
     required this.total,
     required this.hasMore,
+    required this.cursor,
   });
 
   @override
   int get hashCode =>
-      hot.hashCode ^ latest.hashCode ^ total.hashCode ^ hasMore.hashCode;
+      comments.hashCode ^ total.hashCode ^ hasMore.hashCode ^ cursor.hashCode;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is CommentPage &&
+      other is CommentFeed &&
           runtimeType == other.runtimeType &&
-          hot == other.hot &&
-          latest == other.latest &&
+          comments == other.comments &&
           total == other.total &&
-          hasMore == other.hasMore;
+          hasMore == other.hasMore &&
+          cursor == other.cursor;
+}
+
+/// 评论列表的排序，对应 Android 评论页的推荐 / 最热 / 最新。
+enum CommentSort {
+  /// 需要登录才能翻页，未登录只有第一页。
+  recommend,
+  hot,
+  latest,
 }
 
 /// 评论挂在哪类对象下面。
@@ -668,6 +716,9 @@ enum Quality {
   atmos71,
   dolby,
   dts,
+
+  /// 360 Reality Audio（RA04 .mp4，MPEG-H 3D Audio）
+  ra360,
   ogg640,
   ogg320,
   ogg192,
@@ -675,7 +726,6 @@ enum Quality {
   aac192,
   aac48,
   aicodec,
-  vinyl,
 }
 
 class QualityOption {
@@ -986,6 +1036,18 @@ class SearchSuggestion {
           kind == other.kind &&
           title == other.title &&
           subtitle == other.subtitle;
+}
+
+/// 登录态被服务器拒绝、已自动退出的原因。服务器只回 1000，原因按凭证有效期推断。
+enum SessionEndReason {
+  /// 已过凭证有效期。
+  expired,
+
+  /// 有效期内被注销：其他设备登录挤下线、在登录设备管理里删除了本设备、改密码等。
+  revoked,
+
+  /// 不知道凭证有效期（Cookie 登录或旧版本保存的登录态）。
+  unknown,
 }
 
 class Singer {
@@ -1302,10 +1364,13 @@ class SongUrl {
   /// 实际拿到的音质（请求的音质不可用时会自动降级）。
   final Quality quality;
 
-  const SongUrl({required this.url, required this.quality});
+  /// 加密音源的密钥，由调用方交给本机音频中转。
+  final String? ekey;
+
+  const SongUrl({required this.url, required this.quality, this.ekey});
 
   @override
-  int get hashCode => url.hashCode ^ quality.hashCode;
+  int get hashCode => url.hashCode ^ quality.hashCode ^ ekey.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -1313,7 +1378,8 @@ class SongUrl {
       other is SongUrl &&
           runtimeType == other.runtimeType &&
           url == other.url &&
-          quality == other.quality;
+          quality == other.quality &&
+          ekey == other.ekey;
 }
 
 enum SuggestionKind { song, singer, album }
@@ -1410,6 +1476,94 @@ class TopListGroup {
           runtimeType == other.runtimeType &&
           name == other.name &&
           lists == other.lists;
+}
+
+/// 发布页上的一个安装文件。
+class UpdateAsset {
+  final String name;
+  final PlatformInt64 size;
+
+  /// 小写十六进制。
+  final String sha256;
+
+  const UpdateAsset({
+    required this.name,
+    required this.size,
+    required this.sha256,
+  });
+
+  @override
+  int get hashCode => name.hashCode ^ size.hashCode ^ sha256.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateAsset &&
+          runtimeType == other.runtimeType &&
+          name == other.name &&
+          size == other.size &&
+          sha256 == other.sha256;
+}
+
+@freezed
+sealed class UpdateEvent with _$UpdateEvent {
+  const UpdateEvent._();
+
+  /// 连上了下载源（`GitHub` 或镜像域名）。
+  const factory UpdateEvent.connected({required String source}) =
+      UpdateEvent_Connected;
+  const factory UpdateEvent.progress({
+    required PlatformInt64 received,
+    required PlatformInt64 total,
+  }) = UpdateEvent_Progress;
+  const factory UpdateEvent.done() = UpdateEvent_Done;
+
+  /// 下完的文件和清单里的校验码对不上，已删除。
+  const factory UpdateEvent.corrupted() = UpdateEvent_Corrupted;
+  const factory UpdateEvent.failed({required ApiError error}) =
+      UpdateEvent_Failed;
+  const factory UpdateEvent.cancelled() = UpdateEvent_Cancelled;
+}
+
+/// 发布流程生成的版本清单。
+class UpdateInfo {
+  /// 发布用的 tag，如 `v1.3.0-beta.1`。
+  final String tag;
+  final bool prerelease;
+
+  /// 发布日期，`YYYY-MM-DD`。
+  final String date;
+
+  /// Markdown 格式的更新说明。
+  final String notes;
+  final List<UpdateAsset> assets;
+
+  const UpdateInfo({
+    required this.tag,
+    required this.prerelease,
+    required this.date,
+    required this.notes,
+    required this.assets,
+  });
+
+  @override
+  int get hashCode =>
+      tag.hashCode ^
+      prerelease.hashCode ^
+      date.hashCode ^
+      notes.hashCode ^
+      assets.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateInfo &&
+          runtimeType == other.runtimeType &&
+          tag == other.tag &&
+          prerelease == other.prerelease &&
+          date == other.date &&
+          notes == other.notes &&
+          assets == other.assets;
 }
 
 enum UserAssetKind { song, playlist, album, video }

@@ -2,24 +2,12 @@ package com.lxi.kanade
 
 import android.app.ActivityManager
 import android.app.Application
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.IBinder
 import android.os.Process
 import com.ryanheise.audioservice.AudioServicePlugin
-import java.util.function.Consumer
 
 class KanadeApplication : Application() {
-    private var uiBound = false
-    private val uiConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName, service: IBinder) = Unit
-        override fun onServiceDisconnected(name: ComponentName) = Unit
-    }
-
     @Suppress("DEPRECATION")
     val separateAndroidPlayback: Boolean by lazy {
         packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
@@ -35,27 +23,12 @@ class KanadeApplication : Application() {
             getSystemService(ActivityManager::class.java).runningAppProcesses
                 ?.firstOrNull { it.pid == Process.myPid() }?.processName
         }
-        val remote = process != "$packageName:playback"
+        // 界面进程不随播放保活：后台播放时系统可以单独回收它，播放进程不受影响。
         AudioServicePlugin.configurePlaybackProcess(
-            remote,
+            process != "$packageName:playback",
             "androidPlaybackMain",
             MainActivity::class.java.name,
-            if (remote) null else Consumer(::keepUiDuringPlayback),
+            null,
         )
-    }
-
-    // 保留正在播放时的页面栈，界面停帧后仍能独立回收图形缓冲。
-    private fun keepUiDuringPlayback(playing: Boolean) {
-        if (playing == uiBound) return
-        if (playing) {
-            uiBound = bindService(
-                Intent(this, PlaybackUiService::class.java),
-                uiConnection,
-                Context.BIND_AUTO_CREATE or Context.BIND_IMPORTANT or Context.BIND_NOT_FOREGROUND,
-            )
-        } else {
-            unbindService(uiConnection)
-            uiBound = false
-        }
     }
 }

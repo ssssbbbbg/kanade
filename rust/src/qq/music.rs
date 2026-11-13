@@ -287,7 +287,6 @@ pub async fn search_suggestions(query: &str) -> Result<Vec<SearchSuggestion>> {
 }
 
 /// 从请求的音质开始逐级降级，直到拿到可用链接。
-/// 只请求官方提供的普通音频格式，不涉及加密格式。
 pub async fn song_url(mid: &str, media_mid: &str, quality: Quality) -> Result<SongUrl> {
     let chain = playback_chain(quality)?;
     let c = core();
@@ -300,7 +299,12 @@ pub async fn song_url(mid: &str, media_mid: &str, quality: Quality) -> Result<So
     let mut last_err = None;
     let mut got_response = false;
     for &q in &chain {
-        for &(module, method) in vkey_apis {
+        let plain_apis = if super::quality::uses_plain_source(q) {
+            vkey_apis
+        } else {
+            &[]
+        };
+        for &(module, method) in plain_apis {
             let mut param = json!({
                 "guid": if desktop { &c.desktop_guid } else { &c.guid },
                 "songmid": [mid],
@@ -326,8 +330,9 @@ pub async fn song_url(mid: &str, media_mid: &str, quality: Quality) -> Result<So
                     continue;
                 }
             };
-            let purl = s(&data["midurlinfo"][0]["purl"]);
-            if !purl.is_empty() {
+            let item = &data["midurlinfo"][0];
+            let purl = s(&item["purl"]);
+            if !purl.is_empty() && s(&item["ekey"]).is_empty() {
                 let sip = data["sip"]
                     .as_array()
                     .and_then(|a| a.iter().map(s).find(|x| x.starts_with("https")).or_else(|| a.first().map(s)))
@@ -336,7 +341,21 @@ pub async fn song_url(mid: &str, media_mid: &str, quality: Quality) -> Result<So
                 if !matches!(q, Quality::Low | Quality::Standard | Quality::High | Quality::Lossless) && !stream_available(&url).await? {
                     continue;
                 }
-                return Ok(SongUrl { url, quality: q });
+                return Ok(SongUrl {
+                    url,
+                    quality: q,
+                    ekey: None,
+                });
+            }
+        }
+        if desktop && super::quality::encrypted_format(q).is_some() {
+            if let Ok(source) = super::quality::encrypted_source(mid, media_mid, q, None).await {
+                return Ok(source);
+            }
+        }
+        if q == Quality::Ra360 {
+            if let Ok(source) = super::quality::ra360_source(mid, media_mid).await {
+                return Ok(source);
             }
         }
     }
@@ -385,6 +404,18 @@ pub async fn lyric(mid: &str, id: i64) -> Result<Lyric> {
         })
         .await?;
     Ok(lyric::build(&s(&data["lyric"]), &s(&data["trans"])))
+}
+
+/// 歌曲信息里的 `file.try_begin` / `try_end` 就是官方客户端标出的高潮片段，没有时是 0。
+pub async fn chorus(id: i64) -> Result<Option<ChorusRange>> {
+    let c = core();
+    let file = c.cached(&format!("chorus:{id}"), 7 * 86400, || async { Ok(tracks_by_id(&[id]).await?[0]["file"].clone()) }).await?;
+    Ok(chorus_range(&file))
+}
+
+fn chorus_range(file: &Value) -> Option<ChorusRange> {
+    let (start_ms, end_ms) = (n(&file["try_begin"]) as u32, n(&file["try_end"]) as u32);
+    (end_ms > start_ms).then_some(ChorusRange { start_ms, end_ms })
 }
 
 pub async fn toplists() -> Result<Vec<TopListGroup>> {
@@ -828,6 +859,14 @@ pub async fn user_playlists() -> Result<Vec<PlaylistBrief>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn chorus_range_comes_from_try_fields() {
+        let r = chorus_range(&json!({"try_begin": 72998, "try_end": 104743})).unwrap();
+        assert_eq!((r.start_ms, r.end_ms), (72998, 104743));
+        assert!(chorus_range(&json!({"try_begin": 0, "try_end": 0})).is_none());
+        assert!(chorus_range(&json!({})).is_none());
+    }
 
     #[test]
     fn lists_only_foryou_items_kanade_can_show() {

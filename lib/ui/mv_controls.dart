@@ -16,7 +16,8 @@ import 'widgets.dart';
 /// 倍速菜单，从快到慢。
 const _rates = [2.0, 1.5, 1.25, 1.0, 0.75, 0.5];
 
-String _rateLabel(double r) => '${r == r.roundToDouble() ? r.toStringAsFixed(1) : r}x';
+String _rateLabel(double r) =>
+    '${r == r.roundToDouble() ? r.toStringAsFixed(1) : r}x';
 
 /// 画面上的控件不跟主题走，始终是深色。
 const _menuColor = Color(0xFF1C1C1C);
@@ -68,7 +69,9 @@ class _MvControlsState extends State<MvControls> {
         _scheduleHide();
       }),
     );
-    _subs.add(_player.stream.buffering.listen((v) => setState(() => _buffering = v)));
+    _subs.add(
+      _player.stream.buffering.listen((v) => setState(() => _buffering = v)),
+    );
     _scheduleHide();
   }
 
@@ -108,12 +111,18 @@ class _MvControlsState extends State<MvControls> {
   void _seekBy(Duration d) {
     final total = _player.state.duration;
     final target = _player.state.position + d;
-    _player.seek(target < Duration.zero ? Duration.zero : (target > total ? total : target));
+    _player.seek(
+      target < Duration.zero
+          ? Duration.zero
+          : (target > total ? total : target),
+    );
     _show();
   }
 
   KeyEventResult _onKey(FocusNode _, KeyEvent e) {
-    if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
+    if (e is! KeyDownEvent && e is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
     switch (e.logicalKey) {
       case LogicalKeyboardKey.space:
         _player.playOrPause();
@@ -146,7 +155,10 @@ class _MvControlsState extends State<MvControls> {
               const Center(
                 child: SizedBox.square(
                   dimension: 36,
-                  child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             IgnorePointer(
@@ -157,7 +169,11 @@ class _MvControlsState extends State<MvControls> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    IgnorePointer(child: ColoredBox(color: Colors.black.withValues(alpha: 0.3))),
+                    IgnorePointer(
+                      child: ColoredBox(
+                        color: Colors.black.withValues(alpha: 0.3),
+                      ),
+                    ),
                     SafeArea(
                       top: fullscreen,
                       bottom: fullscreen,
@@ -166,7 +182,11 @@ class _MvControlsState extends State<MvControls> {
                         child: Column(
                           children: [
                             _TopBar(title: fullscreen ? widget.title : null),
-                            Expanded(child: _buffering ? const SizedBox() : _center(fullscreen)),
+                            Expanded(
+                              child: _buffering
+                                  ? const SizedBox()
+                                  : _center(fullscreen),
+                            ),
                             _SeekBar(_player, onSeek: _show),
                             _bottomRow(fullscreen),
                           ],
@@ -193,15 +213,26 @@ class _MvControlsState extends State<MvControls> {
       child: Container(
         width: size,
         height: size,
-        decoration: const BoxDecoration(color: _chipColor, shape: BoxShape.circle),
-        child: Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white, size: size * 0.6),
+        decoration: const BoxDecoration(
+          color: _chipColor,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+          color: Colors.white,
+          size: size * 0.6,
+        ),
       ),
     );
     return Center(child: play);
   }
 
   Widget _bottomRow(bool fullscreen) {
-    final timeStyle = const TextStyle(fontSize: 12, color: Colors.white, fontFeatures: [FontFeature.tabularFigures()]);
+    final timeStyle = const TextStyle(
+      fontSize: 12,
+      color: Colors.white,
+      fontFeatures: [FontFeature.tabularFigures()],
+    );
     return SizedBox(
       height: 30,
       child: Row(
@@ -210,8 +241,10 @@ class _MvControlsState extends State<MvControls> {
           StreamBuilder<Duration>(
             stream: _player.stream.position,
             initialData: _player.state.position,
-            builder: (_, snap) =>
-                Text('${formatDuration(snap.data!)} / ${formatDuration(_player.state.duration)}', style: timeStyle),
+            builder: (_, snap) => Text(
+              '${formatDuration(snap.data!)} / ${formatDuration(_player.state.duration)}',
+              style: timeStyle,
+            ),
           ),
           const Spacer(),
           StreamBuilder<double>(
@@ -243,7 +276,11 @@ class _MvControlsState extends State<MvControls> {
           IconButton(
             visualDensity: VisualDensity.compact,
             color: Colors.white,
-            icon: Icon(fullscreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded),
+            icon: Icon(
+              fullscreen
+                  ? Icons.fullscreen_exit_rounded
+                  : Icons.fullscreen_rounded,
+            ),
             onPressed: () => toggleFullscreen(context),
           ),
         ],
@@ -263,11 +300,16 @@ class _TopBar extends StatelessWidget {
     return Row(
       children: [
         GestureDetector(
-          onTap: () => title != null ? exitFullscreen(context) : Navigator.of(context).maybePop(),
+          onTap: () => title != null
+              ? exitFullscreen(context)
+              : Navigator.of(context).maybePop(),
           child: Container(
             width: 34,
             height: 34,
-            decoration: const BoxDecoration(color: _chipColor, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: _chipColor,
+              shape: BoxShape.circle,
+            ),
             child: const Icon(Icons.chevron_left_rounded, color: Colors.white),
           ),
         ),
@@ -278,7 +320,11 @@ class _TopBar extends StatelessWidget {
               title!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -322,8 +368,9 @@ class _SeekBarState extends State<_SeekBar> {
     super.dispose();
   }
 
-  double _fraction(Duration d) =>
-      _duration.inMilliseconds == 0 ? 0 : (d.inMilliseconds / _duration.inMilliseconds).clamp(0, 1);
+  double _fraction(Duration d) => _duration.inMilliseconds == 0
+      ? 0
+      : (d.inMilliseconds / _duration.inMilliseconds).clamp(0, 1);
 
   void _seekTo(double f) {
     widget.player.seek(_duration * f);
@@ -341,8 +388,10 @@ class _SeekBarState extends State<_SeekBar> {
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapUp: (d) => _seekTo(at(d.localPosition)),
-          onHorizontalDragStart: (d) => setState(() => _drag = at(d.localPosition)),
-          onHorizontalDragUpdate: (d) => setState(() => _drag = at(d.localPosition)),
+          onHorizontalDragStart: (d) =>
+              setState(() => _drag = at(d.localPosition)),
+          onHorizontalDragUpdate: (d) =>
+              setState(() => _drag = at(d.localPosition)),
           onHorizontalDragEnd: (_) {
             _seekTo(_drag!);
             setState(() => _drag = null);
@@ -366,7 +415,12 @@ class _SeekBarState extends State<_SeekBar> {
 }
 
 class _SeekPainter extends CustomPainter {
-  _SeekPainter({required this.played, required this.buffered, required this.dragging, required this.inset});
+  _SeekPainter({
+    required this.played,
+    required this.buffered,
+    required this.dragging,
+    required this.inset,
+  });
 
   final double played;
   final double buffered;
@@ -378,16 +432,34 @@ class _SeekPainter extends CustomPainter {
     final y = size.height / 2;
     final width = size.width - inset * 2;
     final track = dragging ? 4.0 : 3.0;
-    RRect bar(double f) =>
-        RRect.fromLTRBR(inset, y - track / 2, inset + width * f, y + track / 2, Radius.circular(track));
-    canvas.drawRRect(bar(1), Paint()..color = Colors.white.withValues(alpha: 0.3));
-    canvas.drawRRect(bar(buffered), Paint()..color = Colors.white.withValues(alpha: 0.5));
+    RRect bar(double f) => RRect.fromLTRBR(
+      inset,
+      y - track / 2,
+      inset + width * f,
+      y + track / 2,
+      Radius.circular(track),
+    );
+    canvas.drawRRect(
+      bar(1),
+      Paint()..color = Colors.white.withValues(alpha: 0.3),
+    );
+    canvas.drawRRect(
+      bar(buffered),
+      Paint()..color = Colors.white.withValues(alpha: 0.5),
+    );
     canvas.drawRRect(bar(played), Paint()..color = KanadeColors.lime);
-    canvas.drawCircle(Offset(inset + width * played, y), dragging ? 7 : 5, Paint()..color = KanadeColors.lime);
+    canvas.drawCircle(
+      Offset(inset + width * played, y),
+      dragging ? 7 : 5,
+      Paint()..color = KanadeColors.lime,
+    );
   }
 
   @override
-  bool shouldRepaint(_SeekPainter old) => old.played != played || old.buffered != buffered || old.dragging != dragging;
+  bool shouldRepaint(_SeekPainter old) =>
+      old.played != played ||
+      old.buffered != buffered ||
+      old.dragging != dragging;
 }
 
 /// 小胶囊按钮，[open] 时底边不动、原地向上长成一列选项；关上时再缩回去。
@@ -414,17 +486,29 @@ class _MorphMenu<T> extends StatefulWidget {
   State<_MorphMenu<T>> createState() => _MorphMenuState<T>();
 }
 
-class _MorphMenuState<T> extends State<_MorphMenu<T>> with SingleTickerProviderStateMixin {
+class _MorphMenuState<T> extends State<_MorphMenu<T>>
+    with SingleTickerProviderStateMixin {
   static const _chipHeight = 26.0;
   static const _rowHeight = 32.0;
   static const _pad = 4.0;
   static const _minWidth = 72.0;
   static const _menuRadius = 16.0;
-  static const _textStyle = TextStyle(fontSize: 12, fontWeight: FontWeight.w600);
+  static const _textStyle = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+  );
 
   // 展开带一点回弹，收起不回弹、干脆利落
-  static final _openSpring = SpringDescription.withDampingRatio(mass: 1, stiffness: 380, ratio: 0.68);
-  static final _closeSpring = SpringDescription.withDampingRatio(mass: 1, stiffness: 560, ratio: 1);
+  static final _openSpring = SpringDescription.withDampingRatio(
+    mass: 1,
+    stiffness: 380,
+    ratio: 0.68,
+  );
+  static final _closeSpring = SpringDescription.withDampingRatio(
+    mass: 1,
+    stiffness: 560,
+    ratio: 1,
+  );
 
   final _portal = OverlayPortalController();
   final _link = LayerLink();
@@ -448,7 +532,9 @@ class _MorphMenuState<T> extends State<_MorphMenu<T>> with SingleTickerProviderS
       _hasPicked = false;
     });
     _portal.show();
-    unawaited(_c.animateWith(SpringSimulation(_openSpring, _c.value, 1, _c.velocity)));
+    unawaited(
+      _c.animateWith(SpringSimulation(_openSpring, _c.value, 1, _c.velocity)),
+    );
     widget.onToggle();
   }
 
@@ -459,7 +545,9 @@ class _MorphMenuState<T> extends State<_MorphMenu<T>> with SingleTickerProviderS
   }
 
   Future<void> _close() async {
-    await _c.animateBackWith(SpringSimulation(_closeSpring, _c.value, 0, _c.velocity, snapToEnd: true));
+    await _c.animateBackWith(
+      SpringSimulation(_closeSpring, _c.value, 0, _c.velocity, snapToEnd: true),
+    );
     if (!mounted || widget.open) return;
     _portal.hide();
     setState(() => _hasPicked = false);
@@ -481,8 +569,11 @@ class _MorphMenuState<T> extends State<_MorphMenu<T>> with SingleTickerProviderS
     super.dispose();
   }
 
-  Widget _chipLabel() =>
-      Text(widget.label(widget.selected), style: _textStyle.copyWith(color: Colors.white), maxLines: 1);
+  Widget _chipLabel() => Text(
+    widget.label(widget.selected),
+    style: _textStyle.copyWith(color: Colors.white),
+    maxLines: 1,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -502,7 +593,10 @@ class _MorphMenuState<T> extends State<_MorphMenu<T>> with SingleTickerProviderS
               height: _chipHeight,
               alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(horizontal: 10),
-              decoration: const ShapeDecoration(color: _chipColor, shape: StadiumBorder()),
+              decoration: const ShapeDecoration(
+                color: _chipColor,
+                shape: StadiumBorder(),
+              ),
               child: _chipLabel(),
             ),
           ),
@@ -515,13 +609,19 @@ class _MorphMenuState<T> extends State<_MorphMenu<T>> with SingleTickerProviderS
     final count = widget.items.length;
     final selected = _hasPicked ? _picked as T : widget.selected;
     final selectedIndex = widget.items.indexOf(selected);
-    final menuSize = Size(max(_minWidth, _chipSize.width), count * _rowHeight + _pad * 2);
+    final menuSize = Size(
+      max(_minWidth, _chipSize.width),
+      count * _rowHeight + _pad * 2,
+    );
 
     return Stack(
       children: [
         // 点菜单外面就收起
         Positioned.fill(
-          child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onToggle),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onToggle,
+          ),
         ),
         CompositedTransformFollower(
           link: _link,
@@ -533,17 +633,23 @@ class _MorphMenuState<T> extends State<_MorphMenu<T>> with SingleTickerProviderS
             builder: (_, _) {
               final v = _c.value;
               final t = v.clamp(0.0, 1.0);
-              double fade(double from, double to) => ((v - from) / (to - from)).clamp(0.0, 1.0);
+              double fade(double from, double to) =>
+                  ((v - from) / (to - from)).clamp(0.0, 1.0);
               // 选项从下往上一行接一行浮上来，挨着按钮的先出来
               final step = min(0.06, 0.3 / count);
               final chipFade = 1 - fade(0, 0.3);
 
               Widget appear(int i, Widget child) {
                 final order = count - 1 - i;
-                final a = Curves.easeOut.transform(fade(0.3 + order * step, 0.7 + order * step));
+                final a = Curves.easeOut.transform(
+                  fade(0.3 + order * step, 0.7 + order * step),
+                );
                 return Opacity(
                   opacity: a,
-                  child: Transform.translate(offset: Offset(0, 8 * (1 - a)), child: child),
+                  child: Transform.translate(
+                    offset: Offset(0, 8 * (1 - a)),
+                    child: child,
+                  ),
                 );
               }
 
@@ -565,7 +671,9 @@ class _MorphMenuState<T> extends State<_MorphMenu<T>> with SingleTickerProviderS
                           child: const DecoratedBox(
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.all(Radius.circular(_menuRadius - _pad)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(_menuRadius - _pad),
+                              ),
                             ),
                           ),
                         ),
@@ -574,7 +682,11 @@ class _MorphMenuState<T> extends State<_MorphMenu<T>> with SingleTickerProviderS
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        for (var i = 0; i < count; i++) appear(i, _row(widget.items[i], selected: i == selectedIndex)),
+                        for (var i = 0; i < count; i++)
+                          appear(
+                            i,
+                            _row(widget.items[i], selected: i == selectedIndex),
+                          ),
                       ],
                     ),
                   ],
@@ -585,7 +697,9 @@ class _MorphMenuState<T> extends State<_MorphMenu<T>> with SingleTickerProviderS
                 width: lerpDouble(_chipSize.width, menuSize.width, v),
                 height: lerpDouble(_chipSize.height, menuSize.height, v),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(lerpDouble(_chipSize.height / 2, _menuRadius, t)!),
+                  borderRadius: BorderRadius.circular(
+                    lerpDouble(_chipSize.height / 2, _menuRadius, t)!,
+                  ),
                   child: ColoredBox(
                     color: Color.lerp(_chipColor, _menuColor, t)!,
                     child: Stack(
@@ -629,7 +743,9 @@ class _MorphMenuState<T> extends State<_MorphMenu<T>> with SingleTickerProviderS
         child: Center(
           child: AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 200),
-            style: _textStyle.copyWith(color: selected ? Colors.black : Colors.white),
+            style: _textStyle.copyWith(
+              color: selected ? Colors.black : Colors.white,
+            ),
             child: Text(widget.label(item)),
           ),
         ),

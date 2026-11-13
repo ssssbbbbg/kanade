@@ -21,7 +21,8 @@ enum _Kind { song, album, playlist, book, radar, video }
 class RecentPage extends StatefulWidget {
   const RecentPage({super.key});
 
-  static Route<void> route() => MaterialPageRoute(builder: (_) => const RecentPage());
+  static Route<void> route() =>
+      MaterialPageRoute(builder: (_) => const RecentPage());
 
   @override
   State<RecentPage> createState() => _RecentPageState();
@@ -32,7 +33,8 @@ class _RecentPageState extends State<RecentPage> {
 
   // 两份数据都在打开页面时开始取，胶囊上的数量随到随显示。
   late final Future<List<Song>> _songs = api.getRecentPlays();
-  late final Future<RecentCollections> _collections = api.getRecentCollections();
+  late final Future<RecentCollections> _collections = api
+      .getRecentCollections();
   List<Song>? _songList;
   RecentCollections? _loaded;
 
@@ -43,8 +45,14 @@ class _RecentPageState extends State<RecentPage> {
   }
 
   void _watch() {
-    _songs.then((v) => mounted ? setState(() => _songList = v) : null, onError: (_) {});
-    _collections.then((v) => mounted ? setState(() => _loaded = v) : null, onError: (_) {});
+    _songs.then(
+      (v) => mounted ? setState(() => _songList = v) : null,
+      onError: (_) {},
+    );
+    _collections.then(
+      (v) => mounted ? setState(() => _loaded = v) : null,
+      onError: (_) {},
+    );
   }
 
   int? _count(_Kind kind) => switch (kind) {
@@ -84,7 +92,13 @@ class _RecentPageState extends State<RecentPage> {
               height: 44,
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text(l.recentPlays, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
+                child: Text(
+                  l.recentPlays,
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ),
           ),
@@ -96,14 +110,22 @@ class _RecentPageState extends State<RecentPage> {
                 for (final kind in _Kind.values)
                   Padding(
                     padding: const EdgeInsetsDirectional.only(end: 8),
-                    child: Pill(label: _label(l, kind), selected: kind == _kind, onTap: () => setState(() => _kind = kind)),
+                    child: Pill(
+                      label: _label(l, kind),
+                      selected: kind == _kind,
+                      onTap: () => setState(() => _kind = kind),
+                    ),
                   ),
               ],
             ),
           ),
           Expanded(
             child: _kind == _Kind.song
-                ? AsyncView<List<Song>>(key: ValueKey(_songs), load: () => _songs, builder: (context, songs) => _SongsView(songs))
+                ? AsyncView<List<Song>>(
+                    key: ValueKey(_songs),
+                    load: () => _songs,
+                    builder: (context, songs) => _SongsView(songs),
+                  )
                 : AsyncView<RecentCollections>(
                     key: ValueKey((_collections, _kind)),
                     load: () => _collections,
@@ -123,7 +145,8 @@ class _RecentPageState extends State<RecentPage> {
         key: ValueKey(_kind),
         controller: scroll,
         itemCount: count + 1,
-        itemBuilder: (context, i) => i == count ? const BottomSpacer() : _item(l, c, i),
+        itemBuilder: (context, i) =>
+            i == count ? const BottomSpacer() : _item(l, c, i),
       ),
     );
   }
@@ -134,7 +157,11 @@ class _RecentPageState extends State<RecentPage> {
     try {
       await context.read<PlayerController>().playRadio(RadioSource.station(id));
     } catch (e) {
-      Toast.show(overlay, l.radioFailed(errorText(l, e)), kind: ToastKind.error);
+      Toast.show(
+        overlay,
+        l.radioFailed(errorText(l, e)),
+        kind: ToastKind.error,
+      );
     }
   }
 
@@ -153,7 +180,10 @@ class _RecentPageState extends State<RecentPage> {
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
           subtitle: Text(
-            [l.songCount(p.songCount), if (p.creator.isNotEmpty) p.creator].join(' · '),
+            [
+              l.songCount(p.songCount),
+              if (p.creator.isNotEmpty) p.creator,
+            ].join(' · '),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -172,9 +202,17 @@ class _RecentPageState extends State<RecentPage> {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
-          subtitle: episode == null ? null : Text(episode.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+          subtitle: episode == null
+              ? null
+              : Text(
+                  episode.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
           // 播放上次听到的那一集
-          onTap: episode == null ? null : () => context.read<PlayerController>().playList([episode], 0),
+          onTap: episode == null
+              ? null
+              : () => context.read<PlayerController>().playList([episode], 0),
         );
       case _Kind.radar:
         final r = c.radios[i];
@@ -221,7 +259,9 @@ class _SongsViewState extends State<_SongsView> {
     if (q.isEmpty) return widget.songs;
     return [
       for (final s in widget.songs)
-        if (s.name.toLowerCase().contains(q) || s.singers.any((e) => e.name.toLowerCase().contains(q))) s,
+        if (s.name.toLowerCase().contains(q) ||
+            s.singers.any((e) => e.name.toLowerCase().contains(q)))
+          s,
     ];
   }
 
@@ -261,14 +301,23 @@ class _SongsViewState extends State<_SongsView> {
                               filled: true,
                               fillColor: scheme.surfaceContainerHigh,
                               contentPadding: EdgeInsets.zero,
-                              prefixIcon: Icon(Icons.search_rounded, size: 20, color: scheme.onSurfaceVariant),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(999), borderSide: BorderSide.none),
+                              prefixIcon: Icon(
+                                Icons.search_rounded,
+                                size: 20,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(999),
+                                borderSide: BorderSide.none,
+                              ),
                             ),
                           ),
                         ),
                       ),
                       TextButton(
-                        style: TextButton.styleFrom(foregroundColor: scheme.onSurface),
+                        style: TextButton.styleFrom(
+                          foregroundColor: scheme.onSurface,
+                        ),
                         onPressed: () => _search(false),
                         child: Text(l.cancel),
                       ),
@@ -277,12 +326,18 @@ class _SongsViewState extends State<_SongsView> {
                 : Row(
                     children: [
                       FilledButton.icon(
-                        onPressed: () => context.read<PlayerController>().playList(widget.songs, 0),
+                        onPressed: () => context
+                            .read<PlayerController>()
+                            .playList(widget.songs, 0),
                         icon: const Icon(Icons.play_arrow_rounded),
                         label: Text(l.playAll(widget.songs.length)),
                       ),
                       const Spacer(),
-                      IconButton(tooltip: l.filterSongsHint, onPressed: () => _search(true), icon: const Icon(Icons.search_rounded)),
+                      IconButton(
+                        tooltip: l.filterSongsHint,
+                        onPressed: () => _search(true),
+                        icon: const Icon(Icons.search_rounded),
+                      ),
                     ],
                   ),
           ),
@@ -293,9 +348,12 @@ class _SongsViewState extends State<_SongsView> {
               : SmoothScroll(
                   builder: (context, scroll) => ListView.builder(
                     controller: scroll,
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     itemCount: shown.length + 1,
-                    itemBuilder: (context, i) => i == shown.length ? const BottomSpacer() : SongTile(songs: shown, index: i),
+                    itemBuilder: (context, i) => i == shown.length
+                        ? const BottomSpacer()
+                        : SongTile(songs: shown, index: i),
                   ),
                 ),
         ),

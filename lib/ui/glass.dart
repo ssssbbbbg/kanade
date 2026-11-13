@@ -9,22 +9,33 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 abstract final class KanadeGlass {
   static const double navigationControlHeight = 58;
 
-  static final bool _isFlutterTest = Platform.environment.containsKey('FLUTTER_TEST');
+  static final bool _isFlutterTest = Platform.environment.containsKey(
+    'FLUTTER_TEST',
+  );
 
   /// Windows 没有 shader image filter，用共享内容纹理做折射；
   /// 玻璃控件要放在 [backdropSource] 外面，否则会采样到自己。
   /// 纹理截下来先做一次真正的高斯模糊，和安卓 premium 的背景模糊一致；
   /// 玻璃 shader 自带的五点近似模糊会让背后的文字出重影。
   static Widget backdropScope({required Widget child, double blur = _blur}) =>
-      Platform.isWindows ? GlassBackdropScope(blurSigma: blur, child: child) : child;
+      Platform.isWindows
+      ? GlassBackdropScope(blurSigma: blur, child: child)
+      : child;
 
   static const double _blur = 2;
 
-  static Widget backdropSource({required Widget child, Rect Function(Size size)? captureBounds}) =>
-      Platform.isWindows ? GlassBackdropSource(captureBounds: captureBounds, child: child) : child;
+  static Widget backdropSource({
+    required Widget child,
+    Rect Function(Size size)? captureBounds,
+  }) => Platform.isWindows
+      ? GlassBackdropSource(captureBounds: captureBounds, child: child)
+      : child;
 
   static GlassQuality get navigationQuality =>
-      !_isFlutterTest && !Platform.isWindows && !Platform.isLinux && ui.ImageFilter.isShaderFilterSupported
+      !_isFlutterTest &&
+          !Platform.isWindows &&
+          !Platform.isLinux &&
+          ui.ImageFilter.isShaderFilterSupported
       ? GlassQuality.premium
       : GlassQuality.standard;
 
@@ -36,14 +47,20 @@ abstract final class KanadeGlass {
   }
 
   /// 宽圆弧透镜。premium 引擎的 bevel 以 3 倍基准像素计，72 ≈ 24 逻辑像素过渡。
-  static LiquidGlassSettings surfaceSettings(BuildContext context, {GlassQuality quality = GlassQuality.standard}) {
+  static LiquidGlassSettings surfaceSettings(
+    BuildContext context, {
+    GlassQuality quality = GlassQuality.standard,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final circularLens = _usesPremiumRenderer(context, quality) || Platform.isWindows;
+    final circularLens =
+        _usesPremiumRenderer(context, quality) || Platform.isWindows;
     return LiquidGlassSettings(
       thickness: circularLens ? 72 : 10,
       blur: _blur,
       refractiveIndex: 1.18,
-      lensModel: circularLens ? GlassLensModel.circularArc : GlassLensModel.spherical,
+      lensModel: circularLens
+          ? GlassLensModel.circularArc
+          : GlassLensModel.spherical,
       refractionAmount: circularLens ? 24 : 0,
       chromaticAberration: 0,
       lightAngle: 2.356194490192345,
@@ -83,17 +100,20 @@ abstract final class KanadeGlass {
   );
 
   /// 着色压得很淡，让后面的封面透得出来。
-  static LiquidGlassSettings navigationSettings(BuildContext context) => surfaceSettings(
-    context,
-    quality: navigationQuality,
-  ).copyWith(glassColor: Theme.of(context).colorScheme.surfaceContainer.withValues(alpha: 0.16));
+  static LiquidGlassSettings navigationSettings(BuildContext context) =>
+      surfaceSettings(context, quality: navigationQuality).copyWith(
+        glassColor: Theme.of(context).colorScheme.surfaceContainer
+            .withValues(alpha: 0.16),
+      );
 
   static Future<void> initialize() async {
     await LiquidGlassWidgets.initialize(enablePerformanceMonitor: false);
     if (Platform.isWindows) {
       // 窗口首帧完成后再预热实际 GPU 绘制，不只把 shader 文件加载进内存。
       unawaited(
-        WidgetsBinding.instance.waitUntilFirstFrameRasterized.then((_) => LightweightLiquidGlass.warmUpRendering()),
+        WidgetsBinding.instance.waitUntilFirstFrameRasterized.then(
+          (_) => LightweightLiquidGlass.warmUpRendering(),
+        ),
       );
     }
   }
@@ -128,7 +148,12 @@ class GlassBackScaffold extends StatelessWidget {
               child: KanadeGlass.backdropSource(
                 // Only the floating back button samples this source. Keep its
                 // lens/blur margin without copying the whole fullscreen list.
-                captureBounds: (_) => Rect.fromLTWH(0, 0, 112, MediaQuery.paddingOf(context).top + 112),
+                captureBounds: (_) => Rect.fromLTWH(
+                  0,
+                  0,
+                  112,
+                  MediaQuery.paddingOf(context).top + 112,
+                ),
                 // Material rather than ColoredBox so list tiles in the body keep their ink.
                 child: Material(color: scheme.surface, child: body),
               ),
@@ -140,11 +165,13 @@ class GlassBackScaffold extends StatelessWidget {
                 useOwnLayer: true,
                 settings: KanadeGlass.navigationSettings(context),
                 quality: KanadeGlass.navigationQuality,
-                semanticLabel: MaterialLocalizations.of(context).backButtonTooltip,
+                semanticLabel: MaterialLocalizations.of(context)
+                    .backButtonTooltip,
                 onPressed: () async {
                   final nav = Navigator.of(context);
                   // 套在 PlayerBarPage 里的第一页：里面那层退不了，交给外面那层
-                  final outer = nav.context.findAncestorStateOfType<NavigatorState>();
+                  final outer = nav.context
+                      .findAncestorStateOfType<NavigatorState>();
                   if (!await nav.maybePop()) outer?.maybePop();
                 },
                 icon: Icon(Icons.arrow_back_rounded, color: scheme.onSurface),

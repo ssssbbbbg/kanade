@@ -69,13 +69,15 @@ mixin PlayerMorph {
   /// 当前看到的变形进度，0 是播放条，1 是全屏播放页。
   double get progress;
 
-  static PlayerMorph? maybeOf(BuildContext context) => context.dependOnInheritedWidgetOfExactType<_MorphScope>()?.morph;
+  static PlayerMorph? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_MorphScope>()?.morph;
 
   /// 播放页在这之前还没完全显出来，底下要有玻璃。
   static const glassUntil = 0.3;
 
   /// 形状在进度 [t] 时的圆角（不算快到全屏时收成直角的那段），从播放条的半圆走向大圆角。
-  static double radiusAt(double barShortestSide, double t) => lerpDouble(barShortestSide / 2, 38, t)!;
+  static double radiusAt(double barShortestSide, double t) =>
+      lerpDouble(barShortestSide / 2, 38, t)!;
 
   /// 进度变化时调用：开头这段让播放条的玻璃跟着长。
   void syncGrowing() {
@@ -113,14 +115,17 @@ Simulation _spring(double from, double to, double velocity) {
   final toward = velocity * dir;
   // 起步切线（进度 / 全程）默认 4，超过 5 会冲过终点，甩得快就缩短时长
   if (toward * duration > 5 * dist) duration = 5 * dist / toward;
-  final tangent = toward >= 0 ? math.max(toward * duration, 4 * dist) : toward * duration;
+  final tangent = toward >= 0
+      ? math.max(toward * duration, 4 * dist)
+      : toward * duration;
   return _Ease(from, to, tangent * dir, math.max(duration, 0.001));
 }
 
 /// x = 起点 + 路程·(1 − (1 − s)⁴) + (起步切线 − 4·路程)·s(1 − s)⁴。
 /// 后一项两端为 0、终点斜率为 0、起点斜率为 1，只用来调起步速度，不影响落点。
 class _Ease extends Simulation {
-  _Ease(this.from, this.to, double tangent, this.duration) : _m = tangent - (to - from) * 4;
+  _Ease(this.from, this.to, double tangent, this.duration)
+    : _m = tangent - (to - from) * 4;
 
   final double from, to, duration;
   final double _m;
@@ -170,7 +175,8 @@ class PlayerBarDrag {
 }
 
 class _DragPreview with PlayerMorph {
-  _DragPreview(this.anchor, TickerProvider vsync) : _controller = AnimationController(vsync: vsync) {
+  _DragPreview(this.anchor, TickerProvider vsync)
+    : _controller = AnimationController(vsync: vsync) {
     // 拖到顶时飞行封面撤掉，换播放页自己的封面露出来，和路由里一样
     _controller.addListener(() {
       artInFlight.value = _controller.value < 1;
@@ -207,16 +213,22 @@ class _DragPreview with PlayerMorph {
     final v = -velocityY / travel;
     final open = v.abs() > 1 ? v > 0 : _controller.value > 0.5;
     if (open) {
-      Navigator.of(
-        context,
-        rootNavigator: true,
-      ).push(PlayerRoute(anchor: anchor, startAt: _controller.value, startVelocity: v, artHint: lastArt));
+      Navigator.of(context, rootNavigator: true).push(
+        PlayerRoute(
+          anchor: anchor,
+          startAt: _controller.value,
+          startVelocity: v,
+          artHint: lastArt,
+        ),
+      );
       _dispose();
     } else {
-      _controller.animateBackWith(_spring(_controller.value, 0, v)).whenComplete(() {
-        anchor.hidden.value = false;
-        _dispose();
-      });
+      _controller
+          .animateBackWith(_spring(_controller.value, 0, v))
+          .whenComplete(() {
+            anchor.hidden.value = false;
+            _dispose();
+          });
     }
   }
 
@@ -242,8 +254,13 @@ class _DragPreview with PlayerMorph {
 /// 用 ModalRoute 而不是 PageRoute：PageRoute 推上来的第一帧会被 Hero 机制挂成 offstage、
 /// 动画临时接到"已完成"；下面的页面也不会跟着做页面切换的动画。
 class PlayerRoute extends ModalRoute<void> with PlayerMorph {
-  PlayerRoute({this.anchor, this.showQueue = false, this.startAt, double? startVelocity, Rect? artHint})
-    : _release = startVelocity {
+  PlayerRoute({
+    this.anchor,
+    this.showQueue = false,
+    this.startAt,
+    double? startVelocity,
+    Rect? artHint,
+  }) : _release = startVelocity {
     lastArt = artHint;
   }
 
@@ -335,8 +352,14 @@ class PlayerRoute extends ModalRoute<void> with PlayerMorph {
   }
 
   /// 从播放条点开。
-  static void open(BuildContext context, {PlayerBarAnchor? anchor, bool showQueue = false}) =>
-      Navigator.of(context, rootNavigator: true).push(PlayerRoute(anchor: anchor, showQueue: showQueue));
+  static void open(
+    BuildContext context, {
+    PlayerBarAnchor? anchor,
+    bool showQueue = false,
+  }) => Navigator.of(
+    context,
+    rootNavigator: true,
+  ).push(PlayerRoute(anchor: anchor, showQueue: showQueue));
 
   /// 手指按下：停在当前看到的位置接管。
   void dragStart() {
@@ -367,13 +390,20 @@ class PlayerRoute extends ModalRoute<void> with PlayerMorph {
   }
 
   @override
-  Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
     // 全屏沉浸：窗口按钮平时隐藏，鼠标移到顶部才出现
     final page = ImmersiveTitleBar(child: PlayerPage(showQueue: showQueue));
     if (!Platform.isWindows) return page;
     // Windows 上按 Esc 收起播放页
     return CallbackShortcuts(
-      bindings: {const SingleActivator(LogicalKeyboardKey.escape): () => navigator?.maybePop()},
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () =>
+            navigator?.maybePop(),
+      },
       child: Focus(autofocus: true, child: page),
     );
   }
@@ -408,14 +438,44 @@ class _BarMorphState extends State<_BarMorph> {
     final art = morph.artKey.currentContext?.findRenderObject();
     final page = _pageKey.currentContext?.findRenderObject();
     if (art is RenderBox && page is RenderBox && art.hasSize && art.attached) {
-      morph.lastArt = MatrixUtils.transformRect(art.getTransformTo(page), Offset.zero & art.size);
+      morph.lastArt = MatrixUtils.transformRect(
+        art.getTransformTo(page),
+        Offset.zero & art.size,
+      );
     }
     return morph.lastArt;
   }
 
+  /// 封面落到播放页位置时的进度，之后钉在播放页上跟着走。
+  static const _coverSettle = 0.84;
+
   /// 飞行封面在进度 [t] 时相对形状左上角的位置：从它在播放条里的位置过渡到它在播放页里的位置。
-  /// 封面钉在形状上跟着一起走，不自己另走一条路；[from] 是封面在屏幕上的位置，[start] 是播放条。
-  static Rect _coverRect(Rect from, Rect start, Rect art, double t) => Rect.lerp(from.shift(-start.topLeft), art, t)!;
+  /// 封面贴着形状底边长大，一开始就慢慢往上挪，越往后挪得越多，到 [_coverSettle] 正好落到 [art]；
+  /// 大小先快后慢，横向居中比大小再快一点。[from] 是封面在屏幕上的位置，[start] 是播放条。
+  static Rect _coverRect(Rect from, Rect start, Rect full, Rect art, double t) {
+    if (t >= _coverSettle) return art;
+    final u = t / _coverSettle;
+    final height = lerpDouble(start.height, full.height, t)!;
+    final settledHeight = lerpDouble(start.height, full.height, _coverSettle)!;
+    final grow = 1 - math.pow(1 - u, 1.7).toDouble();
+    final size = Size.lerp(from.size, art.size, grow)!;
+    final centerX = lerpDouble(
+      from.center.dx - start.left,
+      art.center.dx,
+      1 - math.pow(1 - u, 2.2).toDouble(),
+    )!;
+    final gap = lerpDouble(
+      start.bottom - from.bottom,
+      settledHeight - art.bottom,
+      math.pow(u, 2.5).toDouble(),
+    )!;
+    return Rect.fromLTWH(
+      centerX - size.width / 2,
+      height - gap - size.height,
+      size.width,
+      size.height,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -431,14 +491,21 @@ class _BarMorphState extends State<_BarMorph> {
         final size = MediaQuery.sizeOf(context);
         final full = Offset.zero & size;
         // 没有播放条（测试、其他入口）时从屏幕底边升上来
-        final start = _start = anchor?.rect ?? _start ?? Rect.fromLTWH(16, size.height, size.width - 32, 64);
+        final start = _start =
+            anchor?.rect ??
+            _start ??
+            Rect.fromLTWH(16, size.height, size.width - 32, 64);
         morph.travel = math.max(160, start.top);
         final t = morph.progress;
         final rect = Rect.lerp(start, full, t)!;
         // 全程大圆角，到全屏前的最后一小段才收成直角
-        final radius = PlayerMorph.radiusAt(start.shortestSide, t) * ((1 - t) / 0.06).clamp(0.0, 1.0);
+        final radius =
+            PlayerMorph.radiusAt(start.shortestSide, t) *
+            ((1 - t) / 0.06).clamp(0.0, 1.0);
         // 播放页在前 30% 里显出来，之后它不透明，底下的玻璃就不用画了
-        final pageOpacity = anchor == null ? 1.0 : (t / PlayerMorph.glassUntil).clamp(0.0, 1.0);
+        final pageOpacity = anchor == null
+            ? 1.0
+            : (t / PlayerMorph.glassUntil).clamp(0.0, 1.0);
         final from = anchor != null && t < 1 ? anchor.coverRect : null;
         final art = from == null ? null : _artRect();
         return Stack(
@@ -451,7 +518,12 @@ class _BarMorphState extends State<_BarMorph> {
               key: const ValueKey('page'),
               offset: Offset(0, rect.top),
               child: ClipRRect(
-                clipper: _RRectClipper(RRect.fromRectAndRadius(rect.translate(0, -rect.top), Radius.circular(radius))),
+                clipper: _RRectClipper(
+                  RRect.fromRectAndRadius(
+                    rect.translate(0, -rect.top),
+                    Radius.circular(radius),
+                  ),
+                ),
                 clipBehavior: t >= 1 ? Clip.none : Clip.antiAlias,
                 child: Stack(
                   fit: StackFit.expand,
@@ -460,9 +532,18 @@ class _BarMorphState extends State<_BarMorph> {
                     // 这一层已经跟着形状的顶边平移，横向再补上形状的左边；封面始终在形状里面，也被形状裁住
                     if (from != null)
                       Positioned.fromRect(
-                        rect: _coverRect(from, start, art ?? from.shift(-start.topLeft), t).translate(rect.left, 0),
+                        rect: _coverRect(
+                          from,
+                          start,
+                          full,
+                          art ?? from.shift(-start.topLeft),
+                          t,
+                        ).translate(rect.left, 0),
                         child: IgnorePointer(
-                          child: _FlyingCover(radius: lerpDouble(anchor!.coverRadius, 14, t)!, t: t),
+                          child: _FlyingCover(
+                            radius: lerpDouble(anchor!.coverRadius, 14, t)!,
+                            t: t,
+                          ),
                         ),
                       ),
                   ],
@@ -477,7 +558,10 @@ class _BarMorphState extends State<_BarMorph> {
                 width: start.width,
                 height: start.height,
                 child: IgnorePointer(
-                  child: Opacity(opacity: 1 - t / 0.18, child: anchor.face(context)),
+                  child: Opacity(
+                    opacity: 1 - t / 0.18,
+                    child: anchor.face(context),
+                  ),
                 ),
               ),
           ],
@@ -499,7 +583,9 @@ class _FlyingCover extends StatelessWidget {
   Widget build(BuildContext context) {
     final song = context.read<PlayerController>().current;
     if (song == null) return const SizedBox.shrink();
-    final shadow = albumArtShadow(lifted: context.select<PlayerController, bool>((p) => p.playing));
+    final shadow = albumArtShadow(
+      lifted: context.select<PlayerController, bool>((p) => p.playing),
+    );
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(radius),
@@ -542,7 +628,11 @@ class _RRectClipper extends CustomClipper<RRect> {
 /// Windows 上它一直是 0，圆角保持播放条自己的：Skia 上圆角一变就要现场编译另一份玻璃着色器，
 /// 第一次打开会卡一两百毫秒；这段圆角只差 1～2 像素，播放页还盖在上面淡入，看不出来。
 class PlayerBarGrowth extends StatelessWidget {
-  const PlayerBarGrowth({super.key, required this.anchor, required this.builder});
+  const PlayerBarGrowth({
+    super.key,
+    required this.anchor,
+    required this.builder,
+  });
 
   final PlayerBarAnchor anchor;
   final Widget Function(bool growing, double shapeT) builder;
@@ -574,14 +664,20 @@ class PlayerBarGrowth extends StatelessWidget {
 }
 
 class _Grow extends SingleChildRenderObjectWidget {
-  const _Grow({required this.t, required this.screen, required this.pixelRatio, super.child});
+  const _Grow({
+    required this.t,
+    required this.screen,
+    required this.pixelRatio,
+    super.child,
+  });
 
   final double t;
   final Size screen;
   final double pixelRatio;
 
   @override
-  RenderObject createRenderObject(BuildContext context) => _RenderGrow(t, screen, pixelRatio);
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderGrow(t, screen, pixelRatio);
 
   @override
   void updateRenderObject(BuildContext context, _RenderGrow object) => object
@@ -635,7 +731,11 @@ class _RenderGrow extends RenderProxyBox {
   void performLayout() {
     size = _restSize = constraints.biggest;
     final grown = Size.lerp(size, _screen, _t)!;
-    child?.layout(BoxConstraints.tight(_t == 0 ? size : Size(_snap(grown.width), _snap(grown.height))));
+    child?.layout(
+      BoxConstraints.tight(
+        _t == 0 ? size : Size(_snap(grown.width), _snap(grown.height)),
+      ),
+    );
   }
 
   @override
@@ -655,7 +755,8 @@ class _RenderGrow extends RenderProxyBox {
       result.addWithPaintOffset(
         offset: _shift,
         position: position,
-        hitTest: (result, position) => child!.hitTest(result, position: position),
+        hitTest: (result, position) =>
+            child!.hitTest(result, position: position),
       );
 }
 
@@ -704,6 +805,7 @@ class _RenderPin extends RenderProxyBox {
       result.addWithPaintOffset(
         offset: _back,
         position: position,
-        hitTest: (result, position) => child!.hitTest(result, position: position),
+        hitTest: (result, position) =>
+            child!.hitTest(result, position: position),
       );
 }

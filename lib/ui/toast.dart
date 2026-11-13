@@ -8,7 +8,11 @@ import 'overlay_layout_state.dart';
 enum ToastKind { info, success, liked, error }
 
 /// 提示。页面已经关掉、找不到 Overlay 时什么都不做。
-void showToast(BuildContext context, String text, {ToastKind kind = ToastKind.info}) {
+void showToast(
+  BuildContext context,
+  String text, {
+  ToastKind kind = ToastKind.info,
+}) {
   final overlay = Overlay.maybeOf(context, rootOverlay: true);
   if (overlay != null) Toast.show(overlay, text, kind: kind);
 }
@@ -19,7 +23,11 @@ abstract final class Toast {
   static ValueNotifier<bool>? _leaving;
 
   /// 异步回来后 context 可能已经没了，先拿好 Overlay 再调这个。
-  static void show(OverlayState overlay, String text, {ToastKind kind = ToastKind.info}) {
+  static void show(
+    OverlayState overlay,
+    String text, {
+    ToastKind kind = ToastKind.info,
+  }) {
     _leaving?.value = true;
     final leaving = _leaving = ValueNotifier(false);
     late final OverlayEntry entry;
@@ -41,7 +49,12 @@ abstract final class Toast {
 }
 
 class _Toast extends StatefulWidget {
-  const _Toast({required this.text, required this.kind, required this.leaving, required this.onGone});
+  const _Toast({
+    required this.text,
+    required this.kind,
+    required this.leaving,
+    required this.onGone,
+  });
 
   final String text;
   final ToastKind kind;
@@ -58,17 +71,27 @@ class _ToastState extends State<_Toast> with SingleTickerProviderStateMixin {
     duration: const Duration(milliseconds: 240),
     reverseDuration: const Duration(milliseconds: 160),
   )..forward();
-  late final _t = CurvedAnimation(parent: _c, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+  late final _t = CurvedAnimation(
+    parent: _c,
+    curve: Curves.easeOutCubic,
+    reverseCurve: Curves.easeInCubic,
+  );
   late final Timer _timer;
   bool _left = false;
 
-  static final _placement = Listenable.merge([OverlayLayoutState.instance.chrome, OverlayLayoutState.instance.playerVisible]);
+  static final _placement = Listenable.merge([
+    OverlayLayoutState.instance.chrome,
+    OverlayLayoutState.instance.playerVisible,
+  ]);
 
   @override
   void initState() {
     super.initState();
     // 出错的多留一会儿，方便看清原因
-    _timer = Timer(Duration(milliseconds: widget.kind == ToastKind.error ? 3600 : 2400), _leave);
+    _timer = Timer(
+      Duration(milliseconds: widget.kind == ToastKind.error ? 3600 : 2400),
+      _leave,
+    );
     widget.leaving.addListener(_leave);
   }
 
@@ -91,7 +114,10 @@ class _ToastState extends State<_Toast> with SingleTickerProviderStateMixin {
   (IconData, Color) get _icon => switch (widget.kind) {
     ToastKind.info => (Icons.info_outline_rounded, Colors.white),
     ToastKind.success => (Icons.check_rounded, Colors.white),
-    ToastKind.liked => (Icons.favorite_rounded, Theme.of(context).colorScheme.primary),
+    ToastKind.liked => (
+      Icons.favorite_rounded,
+      Theme.of(context).colorScheme.primary,
+    ),
     ToastKind.error => (Icons.error_outline_rounded, const Color(0xFFFF6B5E)),
   };
 
@@ -104,7 +130,13 @@ class _ToastState extends State<_Toast> with SingleTickerProviderStateMixin {
       child: DecoratedBox(
         decoration: const BoxDecoration(
           borderRadius: radius,
-          boxShadow: [BoxShadow(color: Color(0x80000000), blurRadius: 24, offset: Offset(0, 8))],
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x80000000),
+              blurRadius: 24,
+              offset: Offset(0, 8),
+            ),
+          ],
         ),
         child: ClipRRect(
           borderRadius: radius,
@@ -153,7 +185,9 @@ class _ToastState extends State<_Toast> with SingleTickerProviderStateMixin {
       builder: (context, child) {
         // 播放页底下是播放控制，提示放到顶上；开关播放页、播放条变形时都平滑挪过去，不跳
         final onPlayer = OverlayLayoutState.instance.playerVisible.value;
-        final chrome = onPlayer ? EdgeInsets.zero : OverlayLayoutState.instance.chrome.value;
+        final chrome = onPlayer
+            ? EdgeInsets.zero
+            : OverlayLayoutState.instance.chrome.value;
         final from = onPlayer ? -1.0 : 1.0;
         const duration = Duration(milliseconds: 420);
         const curve = Curves.easeInOutCubic;
@@ -171,14 +205,19 @@ class _ToastState extends State<_Toast> with SingleTickerProviderStateMixin {
             child: AnimatedAlign(
               duration: duration,
               curve: curve,
-              alignment: onPlayer ? Alignment.topCenter : Alignment.bottomCenter,
+              alignment: onPlayer
+                  ? Alignment.topCenter
+                  : Alignment.bottomCenter,
               child: AnimatedBuilder(
                 animation: _t,
                 builder: (context, child) => Opacity(
                   opacity: _t.value.clamp(0.0, 1.0),
                   child: Transform.translate(
                     offset: Offset(0, from * 12 * (1 - _t.value)),
-                    child: Transform.scale(scale: 0.94 + 0.06 * _t.value, child: child),
+                    child: Transform.scale(
+                      scale: 0.94 + 0.06 * _t.value,
+                      child: child,
+                    ),
                   ),
                 ),
                 child: child,

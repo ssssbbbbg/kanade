@@ -6,12 +6,12 @@ use std::sync::Arc;
 use anyhow::{bail, Context, Result};
 use reqwest::cookie::{CookieStore, Jar};
 use reqwest::redirect::Policy;
-use serde_json::json;
+use serde_json::{json, Value};
 use url::Url;
 
 use super::client::{core, now_ms, Session, UA, ANDROID_VERSION};
 use super::error::ApiError;
-use super::parse::{first_s, s};
+use super::parse::{first_s, n, s};
 use super::sign::hash33;
 use crate::api::types::{QrCode, QrStatus, UserInfo};
 
@@ -220,7 +220,7 @@ async fn finish_login(check_sig_url: &str) -> Result<UserInfo> {
     if musicid.is_empty() || musickey.is_empty() {
         bail!(ApiError::login("QQ Music login returned no musickey"));
     }
-    c.set_session(Some(Session { uin: musicid, musickey, login_type: 2, nickname: String::new(), avatar_url: String::new() }))?;
+    c.set_session(Some(Session::new(musicid, musickey, 2, key_expires_at(&data))))?;
     refresh_user_info().await
 }
 
@@ -241,8 +241,19 @@ pub async fn login_with_cookie(cookie: &str) -> Result<UserInfo> {
     let musickey =
         get("qm_keyst").or_else(|| get("qqmusic_key")).context(ApiError::InvalidCookie { missing: "qm_keyst / qqmusic_key".into() })?;
     let login_type = if musickey.starts_with("W_X") { 1 } else { 2 };
-    core().set_session(Some(Session { uin, musickey, login_type, nickname: String::new(), avatar_url: String::new() }))?;
+    core().set_session(Some(Session::new(uin, musickey, login_type, 0)))?;
     refresh_user_info().await
+}
+
+/// 登录响应给出的 musickey 到期时间（Unix 秒），没有有效期字段时为 0。
+/// 官方 PC 客户端的登录响应里 `keyExpiresIn` 为 259200（3 天）。
+fn key_expires_at(data: &Value) -> i64 {
+    let ttl = n(&data["keyExpiresIn"]);
+    if ttl <= 0 {
+        return 0;
+    }
+    let created = n(&data["musickeyCreateTime"]);
+    if created > 0 { created + ttl } else { (now_ms() / 1000) as i64 + ttl }
 }
 
 pub async fn refresh_user_info() -> Result<UserInfo> {
@@ -367,7 +378,7 @@ async fn finish_wx_login(wx_code: &str) -> Result<UserInfo> {
     if musicid.is_empty() || musickey.is_empty() {
         bail!(ApiError::login("QQ Music login returned no musickey"));
     }
-    c.set_session(Some(Session { uin: musicid, musickey, login_type: 1, nickname: String::new(), avatar_url: String::new() }))?;
+    c.set_session(Some(Session::new(musicid, musickey, 1, key_expires_at(&data))))?;
     refresh_user_info().await
 }
 
@@ -618,7 +629,7 @@ async fn finish_tme_login(client: &TmeClient, qrcode_id: &str, payload: &[u8]) -
     }
     // 微信账号的 musickey 以 W_X 开头
     let login_type = if musickey.starts_with("W_X") { 1 } else { 2 };
-    c.set_session(Some(Session { uin: musicid, musickey, login_type, nickname: String::new(), avatar_url: String::new() }))?;
+    c.set_session(Some(Session::new(musicid, musickey, login_type, key_expires_at(&data))))?;
     refresh_user_info().await
 }
 
@@ -694,6 +705,14 @@ mod tests {
     async fn creates_app_qr() {
         let qr = create_app_qr().await.unwrap();
         assert!(qr.url.contains("://txz.qq.com/p?k="), "{}", qr.url);
+    }
+
+    #[test]
+    fn key_expiry_comes_from_login_response() {
+        assert_eq!(key_expires_at(&json!({"musickeyCreateTime": 1793279876, "keyExpiresIn": 259200})), 1793539076);
+        assert_eq!(key_expires_at(&json!({"musickey": "k"})), 0);
+        let now = (now_ms() / 1000) as i64;
+        assert!((now + 259200..=now + 259201).contains(&key_expires_at(&json!({"keyExpiresIn": 259200}))));
     }
 
     #[test]

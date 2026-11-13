@@ -11,7 +11,12 @@ import 'package:flutter/scheduler.dart';
 import '../data/data_ext.dart';
 import '../src/rust/api/types.dart';
 
-const fallbackPalette = [Color(0xFF3A2A4A), Color(0xFF5B3FA8), Color(0xFFB0476A), Color(0xFF2A3F6B)];
+const fallbackPalette = [
+  Color(0xFF3A2A4A),
+  Color(0xFF5B3FA8),
+  Color(0xFFB0476A),
+  Color(0xFF2A3F6B),
+];
 
 /// 背景用的封面素材：4 个主色、一张预先模糊好的小图。
 /// 模糊只在取图时做一次，之后每帧由 shader 把这张小图放大、旋转、扭曲着画出来。
@@ -26,7 +31,10 @@ class CoverArt {
   /// 按主色生成的深色主题（弹出菜单、底部面板用）。fromSeed 要算色调，生成一次就留着。
   late final ThemeData theme = ThemeData(
     useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(seedColor: palette[1], brightness: Brightness.dark),
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: palette[1],
+      brightness: Brightness.dark,
+    ),
   );
 }
 
@@ -48,8 +56,19 @@ final _fallbackImage = () {
   final canvas = Canvas(rec)..drawColor(fallbackPalette.first, BlendMode.src);
   const s = _artSize + 0.0;
   for (final (i, c) in fallbackPalette.indexed) {
-    final center = Offset(s * (0.25 + 0.5 * (i % 2)), s * (0.25 + 0.5 * (i ~/ 2)));
-    canvas.drawCircle(center, s * 0.5, Paint()..shader = ui.Gradient.radial(center, s * 0.5, [c, c.withValues(alpha: 0)]));
+    final center = Offset(
+      s * (0.25 + 0.5 * (i % 2)),
+      s * (0.25 + 0.5 * (i ~/ 2)),
+    );
+    canvas.drawCircle(
+      center,
+      s * 0.5,
+      Paint()
+        ..shader = ui.Gradient.radial(center, s * 0.5, [
+          c,
+          c.withValues(alpha: 0),
+        ]),
+    );
   }
   return rec.endRecording().toImageSync(_artSize, _artSize);
 }();
@@ -58,8 +77,9 @@ ui.FragmentProgram? _program;
 Future<void>? _programLoading;
 
 /// 加载背景 shader。迷你播放器预取封面时就会调用，打开播放页时一般已经好了。
-Future<void> _loadProgram() => _programLoading ??=
-    ui.FragmentProgram.fromAsset('shaders/player_background.frag').then((p) => _program = p);
+Future<void> _loadProgram() => _programLoading ??= ui.FragmentProgram.fromAsset(
+  'shaders/player_background.frag',
+).then((p) => _program = p);
 
 /// 预加载并实际绘制一次，提前完成 Windows / Skia 的首次 GPU 编译。
 /// 只加载 FragmentProgram 不会执行绘制，编译开销仍会落在首次转场里。
@@ -68,7 +88,8 @@ Future<void> warmUpPlayerBackground({CoverArt? art}) async {
   final shader = _program!.fragmentShader();
   final recorder = ui.PictureRecorder();
   final canvas = Canvas(recorder);
-  final pixelRatio = ui.PlatformDispatcher.instance.views.first.devicePixelRatio;
+  final pixelRatio =
+      ui.PlatformDispatcher.instance.views.first.devicePixelRatio;
   canvas.scale(pixelRatio);
   const size = Size(64, 64);
   _BackgroundPainter.paintShader(canvas, size, shader, Paint(), art, art, 0, 1);
@@ -130,7 +151,11 @@ Future<CoverArt> _build(String url) async {
       const Rect.fromLTWH(0, 0, _artSize + 0.0, _artSize + 0.0),
       Paint()
         ..filterQuality = FilterQuality.high
-        ..imageFilter = ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6, tileMode: TileMode.mirror),
+        ..imageFilter = ui.ImageFilter.blur(
+          sigmaX: 6,
+          sigmaY: 6,
+          tileMode: TileMode.mirror,
+        ),
     );
     final blurred = await rec.endRecording().toImage(_artSize, _artSize);
     final art = CoverArt(palette, blurred);
@@ -150,7 +175,11 @@ Future<CoverArt> _build(String url) async {
 
 Future<ui.Image> _loadSmall(ImageProvider provider) {
   final completer = Completer<ui.Image>();
-  final stream = ResizeImage(provider, width: _srcSize, height: _srcSize).resolve(ImageConfiguration.empty);
+  final stream = ResizeImage(
+    provider,
+    width: _srcSize,
+    height: _srcSize,
+  ).resolve(ImageConfiguration.empty);
   late final ImageStreamListener listener;
   listener = ImageStreamListener(
     (info, _) {
@@ -170,14 +199,24 @@ Future<ui.Image> _loadSmall(ImageProvider provider) {
 /// 按色相分 12 个桶，饱和度高、像素多的桶优先，取前 4 个。
 /// 亮度压到中低区间，保证上面的白字看得清。
 List<Color> _pick(ByteData data) {
-  final sums = List.generate(13, (_) => [0.0, 0.0, 0.0, 0.0, 0.0]); // r g b count score
+  final sums = List.generate(
+    13,
+    (_) => [0.0, 0.0, 0.0, 0.0, 0.0],
+  ); // r g b count score
   // 隔一个像素采样就够了
   for (var i = 0; i + 3 < data.lengthInBytes; i += 8) {
     if (data.getUint8(i + 3) < 128) continue;
-    final c = Color.fromARGB(255, data.getUint8(i), data.getUint8(i + 1), data.getUint8(i + 2));
+    final c = Color.fromARGB(
+      255,
+      data.getUint8(i),
+      data.getUint8(i + 1),
+      data.getUint8(i + 2),
+    );
     final hsv = HSVColor.fromColor(c);
     // 灰色单独放最后一个桶
-    final bucket = hsv.saturation < 0.15 || hsv.value < 0.12 ? 12 : (hsv.hue / 30).floor() % 12;
+    final bucket = hsv.saturation < 0.15 || hsv.value < 0.12
+        ? 12
+        : (hsv.hue / 30).floor() % 12;
     final s = sums[bucket];
     s[0] += c.r;
     s[1] += c.g;
@@ -185,17 +224,26 @@ List<Color> _pick(ByteData data) {
     s[3] += 1;
     s[4] += 0.25 + hsv.saturation * hsv.value;
   }
-  final ranked = [for (var b = 0; b < 13; b++) if (sums[b][3] > 0) b]
-    ..sort((a, b) => sums[b][4].compareTo(sums[a][4]));
+  final ranked = [
+    for (var b = 0; b < 13; b++)
+      if (sums[b][3] > 0) b,
+  ]..sort((a, b) => sums[b][4].compareTo(sums[a][4]));
   final colors = [
     for (final b in ranked.take(4))
-      Color.from(alpha: 1, red: sums[b][0] / sums[b][3], green: sums[b][1] / sums[b][3], blue: sums[b][2] / sums[b][3]),
+      Color.from(
+        alpha: 1,
+        red: sums[b][0] / sums[b][3],
+        green: sums[b][1] / sums[b][3],
+        blue: sums[b][2] / sums[b][3],
+      ),
   ];
   if (colors.isEmpty) return fallbackPalette;
   // 颜色不够时用主色的深浅变体补齐
   while (colors.length < 4) {
     final hsl = HSLColor.fromColor(colors.first);
-    colors.add(hsl.withLightness((hsl.lightness + 0.18 * colors.length) % 0.7).toColor());
+    colors.add(
+      hsl.withLightness((hsl.lightness + 0.18 * colors.length) % 0.7).toColor(),
+    );
   }
   return [
     for (final c in colors)
@@ -224,14 +272,17 @@ class PlayerBackground extends StatefulWidget {
 /// 流动相位全局共用：拖动预览交给真正的播放页、重新打开播放页时都接着转，不从头开始。
 double _sharedPhase = 0;
 
-class _PlayerBackgroundState extends State<PlayerBackground> with TickerProviderStateMixin {
+class _PlayerBackgroundState extends State<PlayerBackground>
+    with TickerProviderStateMixin {
   /// 流动相位 0–1，一圈 60 秒。
   final _phase = ValueNotifier<double>(_sharedPhase);
   late final Ticker _ticker = createTicker(_onTick);
   Duration _last = Duration.zero;
 
-  late final AnimationController _fade = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))
-    ..value = 1;
+  late final AnimationController _fade = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  )..value = 1;
   late CoverArt? _from = widget.art;
   late CoverArt? _to = widget.art;
 
@@ -293,7 +344,8 @@ class _PlayerBackgroundState extends State<PlayerBackground> with TickerProvider
         size: Size.infinite,
         painter: _BackgroundPainter(
           this,
-          MediaQuery.maybeDevicePixelRatioOf(context) ?? View.of(context).devicePixelRatio,
+          MediaQuery.maybeDevicePixelRatioOf(context) ??
+              View.of(context).devicePixelRatio,
         ),
         // 每帧都变，告诉引擎别尝试光栅缓存
         willChange: true,
@@ -303,7 +355,8 @@ class _PlayerBackgroundState extends State<PlayerBackground> with TickerProvider
 }
 
 class _BackgroundPainter extends CustomPainter {
-  _BackgroundPainter(this.s, this.pixelRatio) : super(repaint: Listenable.merge([s._phase, s._fade, s._shaderReady]));
+  _BackgroundPainter(this.s, this.pixelRatio)
+    : super(repaint: Listenable.merge([s._phase, s._fade, s._shaderReady]));
 
   final _PlayerBackgroundState s;
   final double pixelRatio;
@@ -319,22 +372,49 @@ class _BackgroundPainter extends CustomPainter {
     final program = _program;
     if (program == null) {
       // shader 还没加载好（通常只有冷启动后第一次打开播放页的头几帧），先铺主色
-      final c = HSLColor.fromColor(Color.lerp(s._from?.palette.first, s._to?.palette.first, t) ?? fallbackPalette.first);
-      canvas.drawRect(full, _paint..color = c.withLightness(c.lightness * 0.6).toColor());
+      final c = HSLColor.fromColor(
+        Color.lerp(s._from?.palette.first, s._to?.palette.first, t) ??
+            fallbackPalette.first,
+      );
+      canvas.drawRect(
+        full,
+        _paint..color = c.withLightness(c.lightness * 0.6).toColor(),
+      );
       return;
     }
     final shader = s._shader ??= program.fragmentShader();
     if (!Platform.isWindows) {
-      paintShader(canvas, size, shader, _paint, s._from, s._to, s._phase.value, t);
+      paintShader(
+        canvas,
+        size,
+        shader,
+        _paint,
+        s._from,
+        s._to,
+        s._phase.value,
+        t,
+      );
       return;
     }
     // Windows / Skia 会为转场中的裁剪和透明度组合另编译背景 shader。
     // 按窗口像素比先绘成纹理，转场只合成图片，复用已经预热的背景程序。
     final recorder = ui.PictureRecorder();
     final imageCanvas = Canvas(recorder)..scale(pixelRatio);
-    paintShader(imageCanvas, size, shader, _paint, s._from, s._to, s._phase.value, t);
+    paintShader(
+      imageCanvas,
+      size,
+      shader,
+      _paint,
+      s._from,
+      s._to,
+      s._phase.value,
+      t,
+    );
     final picture = recorder.endRecording();
-    final image = picture.toImageSync((size.width * pixelRatio).ceil(), (size.height * pixelRatio).ceil());
+    final image = picture.toImageSync(
+      (size.width * pixelRatio).ceil(),
+      (size.height * pixelRatio).ceil(),
+    );
     canvas.drawImageRect(
       image,
       Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
@@ -372,12 +452,21 @@ class _BackgroundPainter extends CustomPainter {
     }
     shader
       // 硬件只做双线性，shader 里再拼成双三次
-      ..setImageSampler(0, fromArt?.blurred ?? _fallbackImage, filterQuality: FilterQuality.low)
-      ..setImageSampler(1, toArt?.blurred ?? _fallbackImage, filterQuality: FilterQuality.low);
+      ..setImageSampler(
+        0,
+        fromArt?.blurred ?? _fallbackImage,
+        filterQuality: FilterQuality.low,
+      )
+      ..setImageSampler(
+        1,
+        toArt?.blurred ?? _fallbackImage,
+        filterQuality: FilterQuality.low,
+      );
     canvas.drawRect(Offset.zero & size, paint..shader = shader);
     paint.shader = null;
   }
 
   @override
-  bool shouldRepaint(_BackgroundPainter old) => old.s != s || old.pixelRatio != pixelRatio;
+  bool shouldRepaint(_BackgroundPainter old) =>
+      old.s != s || old.pixelRatio != pixelRatio;
 }

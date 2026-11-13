@@ -148,7 +148,6 @@
   "qualityDolby": "杜比全景声",
   "qualityOgg320": "高品质 OGG 320k",
   "qualityAiCodec": "AI 音质",
-  "qualityVinyl": "黑胶",
   "reasonUnsupported": "播放器暂不支持此格式",
   "reasonUnverified": "暂未通过播放验证",
   "reasonNoPermission": "当前账号无权限",
@@ -214,6 +213,8 @@
   "alreadyPlaying": "正在播放这首歌",
   "volume": "音量",
   "queue": "播放队列",
+  "removeFromQueue": "从队列移除",
+  "reorderQueue": "拖动调整顺序",
   "playbackError": "播放出错：{error}",
   "@playbackError": {
     "placeholders": {
@@ -342,20 +343,44 @@
     }
   },
   "comments": "评论",
-  "hotComments": "热门评论",
-  "latestComments": "最新评论",
-  "commentTotal": "共 {count} 条评论",
-  "@commentTotal": {
+  "commentsRecommended": "推荐",
+  "noComments": "还没有评论",
+  "commentCount": "{count} 条评论",
+  "@commentCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "timeJustNow": "刚刚",
+  "timeMinutesAgo": "{count} 分钟前",
+  "@timeMinutesAgo": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
-  "noComments": "还没有评论",
+  "timeHoursAgo": "{count} 小时前",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeDaysAgo": "{count} 天前",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "replies": "回复",
-  "viewReplies": "查看 {count} 条回复",
-  "@viewReplies": {
+  "replyCount": "{count} 条回复",
+  "@replyCount": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -400,8 +425,8 @@
   "foryouSaveFailed": "保存失败：{error}",
   "defaultQuality": "默认音质",
   "defaultQualityHint": "选的音质没有或播不了时会自动降低",
-  "songFade": "切歌淡入淡出",
-  "songFadeHint": "上一首渐渐变小，下一首渐渐变大",
+  "songFade": "播放过渡",
+  "songFadeHint": "切歌、暂停和继续播放时音量渐变",
   "songFadeOff": "关闭",
   "songFadeSeconds": "{seconds} 秒",
   "audioCacheLimit": "歌曲缓存上限",
@@ -418,6 +443,17 @@
   "clearApiCacheConfirm": "清除歌单、搜索、歌词等缓存数据？",
   "cacheCleared": "已清除",
   "logoutConfirm": "确定退出登录？",
+  "sessionEndedTitle": "登录已失效",
+  "sessionExpired": "登录已超过有效期，已自动退出。重新登录后就能继续同步歌单和播放会员歌曲。",
+  "sessionRevoked": "登录还没到期就被 QQ 音乐注销了，已自动退出。",
+  "sessionRejected": "QQ 音乐不再接受当前的登录，已自动退出。",
+  "sessionCausesTitle": "可能的原因",
+  "sessionCauseOtherDevice": "账号在其他设备登录，这里被挤下线",
+  "sessionCauseDeviceRemoved": "在「登录设备管理」里删除了这台设备",
+  "sessionCausePassword": "修改了账号密码",
+  "sessionCauseExpired": "登录超过了有效期",
+  "loginAgain": "重新登录",
+  "later": "稍后",
   "ok": "确定",
   "likedSongs": "我喜欢",
   "recentPlays": "最近播放",
@@ -600,5 +636,43 @@
   "sleepTimerMinutes": "分钟",
   "sleepTimerStart": "开始",
   "sleepAfterSong": "播完整首再停止",
-  "sleepTimerOff": "关闭定时"
+  "sleepTimerOff": "关闭定时",
+  "close": "关闭",
+  "settingsAbout": "关于",
+  "checkUpdate": "检查更新",
+  "currentVersion": "当前版本 {version}",
+  "@currentVersion": { "placeholders": { "version": { "type": "String" } } },
+  "updateChecking": "正在检查…",
+  "upToDate": "已是最新",
+  "updateCheckFailed": "检查更新失败，稍后再试",
+  "updatePreview": "接收预览版更新",
+  "updatePreviewHint": "测试版也会提醒，可能不稳定",
+  "updateMirror": "通过镜像下载更新",
+  "updateMirrorHint": "打开后不连接 GitHub，全部走镜像",
+  "updateAvailable": "发现新版本 {version}",
+  "@updateAvailable": { "placeholders": { "version": { "type": "String" } } },
+  "updatePreviewBadge": "预览版",
+  "updateCurrent": "当前 {version}",
+  "@updateCurrent": { "placeholders": { "version": { "type": "String" } } },
+  "updateDate": "{date} 发布",
+  "@updateDate": { "placeholders": { "date": { "type": "String" } } },
+  "updateInstaller": "安装包",
+  "updateInstallerHint": "运行安装程序覆盖更新",
+  "updateArchive": "压缩包",
+  "updateArchiveHint": "退出后自动替换文件",
+  "updateNow": "立即更新",
+  "updateSkip": "跳过这个版本",
+  "updateDownloading": "正在下载 {version}",
+  "@updateDownloading": { "placeholders": { "version": { "type": "String" } } },
+  "updateDownloadingHint": "下载完会自动校验并安装",
+  "updateConnecting": "正在连接下载源…",
+  "updateSource": "下载源：{source}",
+  "@updateSource": { "placeholders": { "source": { "type": "String" } } },
+  "updateFailed": "更新失败",
+  "updateNetworkFailed": "没能下载下来。检查网络后重试，或在设置里切换镜像。",
+  "updateCorrupted": "文件校验没通过，可能是下载源出了问题。没有安装任何东西。",
+  "updateNotWritable": "没有权限替换程序目录里的文件，请改用安装包。",
+  "updateInstallFailed": "没能打开安装程序。",
+  "updateUseInstaller": "改用安装包",
+  "updateOpenBrowser": "在浏览器中下载"
 }

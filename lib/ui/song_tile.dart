@@ -6,7 +6,7 @@ import '../data/data_ext.dart';
 import '../l10n/l10n_ext.dart';
 import '../player/player_controller.dart';
 import '../src/rust/api/types.dart';
-import 'song_actions.dart';
+import 'song_action_sheet.dart';
 import 'widgets.dart';
 
 class SongTile extends StatelessWidget {

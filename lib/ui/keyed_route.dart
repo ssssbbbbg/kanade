@@ -37,4 +37,5 @@ void openPageIn(NavigatorState nav, Route<void> route) {
   nav.popUntil((r) => r == existing);
 }
 
-void openPage(BuildContext context, Route<void> route) => openPageIn(Navigator.of(context), route);
+void openPage(BuildContext context, Route<void> route) =>
+    openPageIn(Navigator.of(context), route);

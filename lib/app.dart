@@ -142,7 +142,15 @@ class KanadeApp extends StatelessWidget {
             ? Duration.zero
             : kThemeAnimationDuration,
         builder: (context, child) => WindowFrame(child: child!),
-        home: const HomeShell(),
+        // 上面盖着弹窗或播放页时，首页不跟着键盘缩放：
+        // 发现页的网格按排版约束建，键盘每动一帧都会整块重建，弹窗里输入时卡顿
+        home: Builder(
+          builder: (context) => MediaQuery.removeViewInsets(
+            context: context,
+            removeBottom: !(ModalRoute.of(context)?.isCurrent ?? true),
+            child: const HomeShell(),
+          ),
+        ),
       ),
     );
   }

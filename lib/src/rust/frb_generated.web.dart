@@ -26,6 +26,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   });
 
   @protected
+  AnyhowException dco_decode_AnyhowException(dynamic raw);
+
+  @protected
+  RustStreamSink<SessionEndReason> dco_decode_StreamSink_session_end_reason_Sse(
+    dynamic raw,
+  );
+
+  @protected
+  RustStreamSink<UpdateEvent> dco_decode_StreamSink_update_event_Sse(
+    dynamic raw,
+  );
+
+  @protected
   String dco_decode_String(dynamic raw);
 
   @protected
@@ -41,7 +54,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool dco_decode_bool(dynamic raw);
 
   @protected
+  ApiError dco_decode_box_autoadd_api_error(dynamic raw);
+
+  @protected
   CachedAudio dco_decode_box_autoadd_cached_audio(dynamic raw);
+
+  @protected
+  ChorusRange dco_decode_box_autoadd_chorus_range(dynamic raw);
 
   @protected
   PlaylistBrief dco_decode_box_autoadd_playlist_brief(dynamic raw);
@@ -58,16 +77,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Song dco_decode_box_autoadd_song(dynamic raw);
 
   @protected
+  UpdateAsset dco_decode_box_autoadd_update_asset(dynamic raw);
+
+  @protected
   UserInfo dco_decode_box_autoadd_user_info(dynamic raw);
 
   @protected
   CachedAudio dco_decode_cached_audio(dynamic raw);
 
   @protected
+  ChorusRange dco_decode_chorus_range(dynamic raw);
+
+  @protected
   Comment dco_decode_comment(dynamic raw);
 
   @protected
-  CommentPage dco_decode_comment_page(dynamic raw);
+  CommentFeed dco_decode_comment_feed(dynamic raw);
+
+  @protected
+  CommentSort dco_decode_comment_sort(dynamic raw);
 
   @protected
   CommentTarget dco_decode_comment_target(dynamic raw);
@@ -169,6 +197,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<TopListGroup> dco_decode_list_top_list_group(dynamic raw);
 
   @protected
+  List<UpdateAsset> dco_decode_list_update_asset(dynamic raw);
+
+  @protected
   List<UserBrief> dco_decode_list_user_brief(dynamic raw);
 
   @protected
@@ -200,6 +231,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   CachedAudio? dco_decode_opt_box_autoadd_cached_audio(dynamic raw);
+
+  @protected
+  ChorusRange? dco_decode_opt_box_autoadd_chorus_range(dynamic raw);
 
   @protected
   PlaylistBrief? dco_decode_opt_box_autoadd_playlist_brief(dynamic raw);
@@ -266,6 +300,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   SearchSuggestion dco_decode_search_suggestion(dynamic raw);
 
   @protected
+  SessionEndReason dco_decode_session_end_reason(dynamic raw);
+
+  @protected
   Singer dco_decode_singer(dynamic raw);
 
   @protected
@@ -317,6 +354,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void dco_decode_unit(dynamic raw);
 
   @protected
+  UpdateAsset dco_decode_update_asset(dynamic raw);
+
+  @protected
+  UpdateEvent dco_decode_update_event(dynamic raw);
+
+  @protected
+  UpdateInfo dco_decode_update_info(dynamic raw);
+
+  @protected
   UserAssetKind dco_decode_user_asset_kind(dynamic raw);
 
   @protected
@@ -341,6 +387,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   VideoTag dco_decode_video_tag(dynamic raw);
 
   @protected
+  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
+
+  @protected
+  RustStreamSink<SessionEndReason> sse_decode_StreamSink_session_end_reason_Sse(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  RustStreamSink<UpdateEvent> sse_decode_StreamSink_update_event_Sse(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
@@ -356,7 +415,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
+  ApiError sse_decode_box_autoadd_api_error(SseDeserializer deserializer);
+
+  @protected
   CachedAudio sse_decode_box_autoadd_cached_audio(SseDeserializer deserializer);
+
+  @protected
+  ChorusRange sse_decode_box_autoadd_chorus_range(SseDeserializer deserializer);
 
   @protected
   PlaylistBrief sse_decode_box_autoadd_playlist_brief(
@@ -375,16 +440,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Song sse_decode_box_autoadd_song(SseDeserializer deserializer);
 
   @protected
+  UpdateAsset sse_decode_box_autoadd_update_asset(SseDeserializer deserializer);
+
+  @protected
   UserInfo sse_decode_box_autoadd_user_info(SseDeserializer deserializer);
 
   @protected
   CachedAudio sse_decode_cached_audio(SseDeserializer deserializer);
 
   @protected
+  ChorusRange sse_decode_chorus_range(SseDeserializer deserializer);
+
+  @protected
   Comment sse_decode_comment(SseDeserializer deserializer);
 
   @protected
-  CommentPage sse_decode_comment_page(SseDeserializer deserializer);
+  CommentFeed sse_decode_comment_feed(SseDeserializer deserializer);
+
+  @protected
+  CommentSort sse_decode_comment_sort(SseDeserializer deserializer);
 
   @protected
   CommentTarget sse_decode_comment_target(SseDeserializer deserializer);
@@ -496,6 +570,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<UpdateAsset> sse_decode_list_update_asset(SseDeserializer deserializer);
+
+  @protected
   List<UserBrief> sse_decode_list_user_brief(SseDeserializer deserializer);
 
   @protected
@@ -527,6 +604,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   CachedAudio? sse_decode_opt_box_autoadd_cached_audio(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ChorusRange? sse_decode_opt_box_autoadd_chorus_range(
     SseDeserializer deserializer,
   );
 
@@ -601,6 +683,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   SearchSuggestion sse_decode_search_suggestion(SseDeserializer deserializer);
 
   @protected
+  SessionEndReason sse_decode_session_end_reason(SseDeserializer deserializer);
+
+  @protected
   Singer sse_decode_singer(SseDeserializer deserializer);
 
   @protected
@@ -652,6 +737,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_decode_unit(SseDeserializer deserializer);
 
   @protected
+  UpdateAsset sse_decode_update_asset(SseDeserializer deserializer);
+
+  @protected
+  UpdateEvent sse_decode_update_event(SseDeserializer deserializer);
+
+  @protected
+  UpdateInfo sse_decode_update_info(SseDeserializer deserializer);
+
+  @protected
   UserAssetKind sse_decode_user_asset_kind(SseDeserializer deserializer);
 
   @protected
@@ -676,6 +770,24 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   VideoTag sse_decode_video_tag(SseDeserializer deserializer);
 
   @protected
+  void sse_encode_AnyhowException(
+    AnyhowException self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_StreamSink_session_end_reason_Sse(
+    RustStreamSink<SessionEndReason> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_StreamSink_update_event_Sse(
+    RustStreamSink<UpdateEvent> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
@@ -691,8 +803,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_api_error(
+    ApiError self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_cached_audio(
     CachedAudio self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_chorus_range(
+    ChorusRange self,
     SseSerializer serializer,
   );
 
@@ -715,6 +839,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_box_autoadd_song(Song self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_update_asset(
+    UpdateAsset self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_user_info(
     UserInfo self,
     SseSerializer serializer,
@@ -724,10 +854,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_cached_audio(CachedAudio self, SseSerializer serializer);
 
   @protected
+  void sse_encode_chorus_range(ChorusRange self, SseSerializer serializer);
+
+  @protected
   void sse_encode_comment(Comment self, SseSerializer serializer);
 
   @protected
-  void sse_encode_comment_page(CommentPage self, SseSerializer serializer);
+  void sse_encode_comment_feed(CommentFeed self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_comment_sort(CommentSort self, SseSerializer serializer);
 
   @protected
   void sse_encode_comment_target(CommentTarget self, SseSerializer serializer);
@@ -877,6 +1013,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_update_asset(
+    List<UpdateAsset> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_user_brief(
     List<UserBrief> self,
     SseSerializer serializer,
@@ -915,6 +1057,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_opt_box_autoadd_cached_audio(
     CachedAudio? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_chorus_range(
+    ChorusRange? self,
     SseSerializer serializer,
   );
 
@@ -1012,6 +1160,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_session_end_reason(
+    SessionEndReason self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_singer(Singer self, SseSerializer serializer);
 
   @protected
@@ -1067,6 +1221,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_unit(void self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_update_asset(UpdateAsset self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_update_event(UpdateEvent self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_update_info(UpdateInfo self, SseSerializer serializer);
 
   @protected
   void sse_encode_user_asset_kind(UserAssetKind self, SseSerializer serializer);

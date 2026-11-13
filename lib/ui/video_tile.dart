@@ -26,8 +26,14 @@ class VideoTile extends StatelessWidget {
                 right: 4,
                 bottom: 4,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(4)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                   child: Text(
                     formatDuration(Duration(seconds: video.durationSecs)),
                     style: const TextStyle(
@@ -56,7 +62,8 @@ class VideoTile extends StatelessWidget {
               child: Text(
                 [
                   if (video.creator.isNotEmpty) video.creator,
-                  if (video.playCount > BigInt.zero) '▶ ${formatCount(l, video.playCount.toInt())}',
+                  if (video.playCount > BigInt.zero)
+                    '▶ ${formatCount(l, video.playCount.toInt())}',
                 ].join(' · '),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -65,7 +72,8 @@ class VideoTile extends StatelessWidget {
           ],
         ),
       ),
-      onTap: () => Navigator.of(context).push(MvPage.route(video.vid, video.name)),
+      onTap: () =>
+          Navigator.of(context).push(MvPage.route(video.vid, video.name)),
     );
   }
 }

@@ -4,9 +4,11 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.core.content.FileProvider
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 class MainActivity : AudioServiceActivity() {
     private var bubble: RecognizeBubble? = null
@@ -86,6 +88,29 @@ class MainActivity : AudioServiceActivity() {
                                 .addCategory(Intent.CATEGORY_BROWSABLE)
                                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                 .setPackage(call.argument<String>("package")),
+                        )
+                        true
+                    } catch (_: Exception) {
+                        false
+                    },
+                )
+                else -> result.notImplemented()
+            }
+        }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kanade/update").setMethodCallHandler { call, result ->
+            when (call.method) {
+                // 没开「安装未知应用」权限时，系统安装器会自己引导去打开
+                "install" -> result.success(
+                    try {
+                        val uri = FileProvider.getUriForFile(
+                            this,
+                            "$packageName.update",
+                            File(call.argument<String>("path")!!),
+                        )
+                        startActivity(
+                            Intent(Intent.ACTION_VIEW)
+                                .setDataAndType(uri, "application/vnd.android.package-archive")
+                                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK),
                         )
                         true
                     } catch (_: Exception) {

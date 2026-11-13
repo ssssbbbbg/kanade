@@ -19,13 +19,12 @@ fn use_desktop_test_login() {
         let comm = &body["comm"];
         (!comm["authst"].as_str()?.is_empty()).then(|| comm.clone())
     }).expect("HAR 中没有登录态");
-    client::core().set_session(Some(client::Session {
-        uin: comm["uin"].as_str().expect("登录态缺少 uin").into(),
-        musickey: comm["authst"].as_str().expect("登录态缺少 authst").into(),
-        login_type: comm["tmeLoginType"].as_i64().expect("登录态缺少 tmeLoginType") as i32,
-        nickname: String::new(),
-        avatar_url: String::new(),
-    })).unwrap();
+    client::core().set_session(Some(client::Session::new(
+        comm["uin"].as_str().expect("登录态缺少 uin").into(),
+        comm["authst"].as_str().expect("登录态缺少 authst").into(),
+        comm["tmeLoginType"].as_i64().expect("登录态缺少 tmeLoginType") as i32,
+        0,
+    ))).unwrap();
 }
 
 /// 只读：新歌手页、自己的资料，以及抓包中已有公开歌单用户的收藏分页。
@@ -141,7 +140,7 @@ async fn desktop_dynamic_qualities() {
     let options = rust_lib_kanade::qq::quality::song_qualities(&mid).await.unwrap();
     assert!(options.len() > 4, "未返回扩展音质");
     assert!(options.iter().any(|option| option.quality == Quality::Master));
-    assert!(options.iter().filter(|option| matches!(option.quality, Quality::Aicodec | Quality::Vinyl | Quality::Dts | Quality::Dolby)).all(|option| !option.available));
+    assert!(options.iter().filter(|option| matches!(option.quality, Quality::Aicodec | Quality::Dts | Quality::Dolby)).all(|option| !option.available));
     let selected = options.iter().find(|option| option.available && matches!(option.quality, Quality::Master | Quality::Hires | Quality::Atmos | Quality::Atmos51 | Quality::Atmos71)).expect("当前样本没有可播放的扩展音质");
     let track = client::core().desktop_musicu("music.trackInfo.UniformRuleCtrl", "CgiGetTrackInfo", serde_json::json!({
         "ctx": 0, "client": 1, "types": [0], "modify_stamp": [0], "mids": [mid],
@@ -479,6 +478,26 @@ async fn mobile_write_transport_with_readonly_call() {
     use_desktop_test_login();
     let data = client::core().mobile_write("music.vipcgi.VipBannerCgi", "QueryVipBanner", serde_json::json!({})).await.unwrap();
     assert!(data.get("banner").is_some(), "Android 写请求封装没有返回预期的只读数据");
+}
+
+/// 只读：登录后推荐评论能一直翻到第一页给出的 id 用完，中间不重复。
+#[tokio::test]
+#[ignore]
+async fn desktop_recommended_comments_paging() {
+    use rust_lib_kanade::{api::types::{CommentSort, CommentTarget}, qq::detail};
+    use_desktop_test_login();
+    let mut seen = std::collections::HashSet::new();
+    let (mut cursor, mut pages) = (String::new(), 0);
+    loop {
+        let feed = detail::comment_feed(CommentTarget::Song, 121345659, CommentSort::Recommend, &cursor).await.unwrap();
+        assert!(!feed.comments.is_empty() && feed.total > 0, "推荐第 {pages} 页为空");
+        assert!(feed.comments.iter().all(|c| seen.insert(c.id.clone())), "推荐第 {pages} 页与前面重复");
+        pages += 1;
+        if !feed.has_more { break }
+        cursor = feed.cursor;
+    }
+    println!("recommended pages={pages} comments={}", seen.len());
+    assert!(pages > 3, "登录后推荐应当能翻页");
 }
 
 /// 仅在用户同意后显式运行：只测试报告中的一首未收藏歌曲，随后恢复原状态。

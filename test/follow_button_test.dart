@@ -13,6 +13,12 @@ class _Auth extends ChangeNotifier implements AuthController {
   UserInfo? user = const UserInfo(uin: 'test', nickname: 'test', avatarUrl: '');
 
   @override
+  SessionEndReason? sessionEnd;
+
+  @override
+  void dismissSessionEnd() => sessionEnd = null;
+
+  @override
   bool get loggedIn => user != null;
 
   @override

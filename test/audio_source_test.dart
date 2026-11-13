@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kanade/player/audio_source.dart';
 import 'package:kanade/src/rust/api/types.dart';
@@ -8,15 +10,22 @@ class _FakeApi implements RustLibApi {
   final cache = <(String, Quality), String>{};
   final served = <Quality, Quality>{};
   Object? urlError;
+  String? sourceKey;
+  String? streamKey;
   final removed = <(String, Quality)>[];
   final urlRequests = <Quality>[];
+  final readinessRequests = <String>[];
+  Completer<void>? decoded;
 
   void reset() {
     cache.clear();
     served.clear();
     urlError = null;
+    sourceKey = streamKey = null;
     removed.clear();
     urlRequests.clear();
+    readinessRequests.clear();
+    decoded = null;
   }
 
   @override
@@ -33,12 +42,29 @@ class _FakeApi implements RustLibApi {
     urlRequests.add(quality);
     final error = urlError;
     if (error != null) throw error;
-    return SongUrl(url: 'https://qq.example/$mediaMid', quality: served[quality] ?? quality);
+    return SongUrl(
+      url: 'https://qq.example/$mediaMid',
+      quality: served[quality] ?? quality,
+      ekey: sourceKey,
+    );
   }
 
   @override
-  String crateApiMusicStreamAudio({required String mid, required Quality quality, required String url}) =>
-      'http://127.0.0.1:1/$mid/${quality.name}';
+  String crateApiMusicStreamAudio({
+    required String mid,
+    required Quality quality,
+    required String url,
+    String? ekey,
+  }) {
+    streamKey = ekey;
+    return 'http://127.0.0.1:1/$mid/${quality.name}';
+  }
+
+  @override
+  Future<void> crateApiMusicWaitForDecodedAudio({required String url}) {
+    readinessRequests.add(url);
+    return decoded!.future;
+  }
 
   @override
   void crateApiMusicRemoveCachedAudio({required String mid, required Quality quality}) {
@@ -94,11 +120,47 @@ void main() {
     expect(fake.urlRequests, [Quality.high]);
   });
 
+  test('加密音源的密钥交给本机中转，播放器只拿到回环地址', () async {
+    fake.sourceKey = 'test-ekey';
+    final src = (await AudioSource.resolve(
+      _song,
+      Quality.high,
+      stale: _fresh,
+    ))!;
+    expect(
+      (src.url, src.quality),
+      ('http://127.0.0.1:1/m1/high', Quality.high),
+    );
+    expect(fake.streamKey, 'test-ekey');
+  });
+
   test('在线降级拿到的那档之前缓存过：用缓存', () async {
     fake.served[Quality.lossless] = Quality.high;
     fake.cache[('m1', Quality.high)] = 'C:/cache/a.m4a';
     final src = (await AudioSource.resolve(_song, Quality.lossless, stale: _fresh))!;
     expect((src.url, src.quality, src.cached), ('C:/cache/a.m4a', Quality.high, true));
+  });
+
+  test('整曲解码档位等待 Rust 准备好，普通音源直接打开', () async {
+    final regular = (await AudioSource.resolve(
+      _song,
+      Quality.high,
+      stale: _fresh,
+    ))!;
+    expect(regular.waitUntilReady(), isNull);
+    for (final quality in [Quality.aicodec, Quality.dts]) {
+      final decoded = fake.decoded = Completer<void>();
+      final source = (await AudioSource.resolve(
+        _song,
+        quality,
+        stale: _fresh,
+      ))!;
+      final ready = source.waitUntilReady()!;
+      expect(fake.readinessRequests.last, source.url);
+      final completion = expectLater(ready, completes);
+      decoded.complete();
+      await completion;
+    }
   });
 
   test('取链接失败：用这首歌任一音质的缓存，都没有就抛出原来的错误', () async {

@@ -1,6 +1,6 @@
-> 本项目仅供个人学习和技术交流，与腾讯 / QQ 音乐没有任何关系。
+> 本项目仅供个人学习和技术交流，与腾讯或 QQ 音乐没有任何关系。
 > 所有音乐内容的版权归各自权利人所有；能播放哪些歌完全取决于你自己账号的权限。
-> 本项目只请求官方提供的普通音频格式，**不破解、不处理任何加密格式**。
+> 本不会绕过会员、地区限制或歌曲权限。
 
 <p align="center">
   <img src="docs/screenshots/desktop.png" width="90%">
@@ -14,8 +14,6 @@
   <img src="docs/screenshots/player.jpg" width="22%">
   <img src="docs/screenshots/lyrics.jpg" width="22%">
 </p>
-
-[接口参考](docs/qqmusic-api.md)。
 
 ### 运行
 

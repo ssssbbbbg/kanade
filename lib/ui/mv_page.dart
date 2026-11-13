@@ -51,7 +51,10 @@ class _BackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IconButton(
-    style: IconButton.styleFrom(backgroundColor: Colors.black54, foregroundColor: Colors.white),
+    style: IconButton.styleFrom(
+      backgroundColor: Colors.black54,
+      foregroundColor: Colors.white,
+    ),
     icon: const Icon(Icons.chevron_left_rounded),
     onPressed: () => Navigator.of(context).maybePop(),
   );
@@ -70,14 +73,17 @@ class _BodyState extends State<_Body> {
   /// 默认 720P：比 1080P 省流量，手机和窗口里都够清楚。
   static const _defaultHeight = 720;
 
-  final _player = Player(configuration: const PlayerConfiguration(title: 'Kanade MV'));
+  final _player = Player(
+    configuration: const PlayerConfiguration(title: 'Kanade MV'),
+  );
   late final _controller = VideoController(_player);
 
   /// 全屏页里的控制层也要跟着变，所以用通知而不是 setState。
   final _stream = ValueNotifier<MvStream?>(null);
 
   /// 清晰度菜单从高到低。
-  late final _streams = [...widget.d.streams]..sort((a, b) => b.height.compareTo(a.height));
+  late final _streams = [...widget.d.streams]
+    ..sort((a, b) => b.height.compareTo(a.height));
 
   @override
   void initState() {
@@ -85,7 +91,13 @@ class _BodyState extends State<_Body> {
     final streams = widget.d.streams;
     if (streams.isEmpty) return;
     context.read<PlayerController>().pause();
-    _play(streams.lastWhere((s) => s.height <= _defaultHeight, orElse: () => streams.first), Duration.zero);
+    _play(
+      streams.lastWhere(
+        (s) => s.height <= _defaultHeight,
+        orElse: () => streams.first,
+      ),
+      Duration.zero,
+    );
   }
 
   @override
@@ -123,7 +135,10 @@ class _BodyState extends State<_Body> {
                     ColoredBox(
                       color: Colors.black54,
                       child: Center(
-                        child: Text(l.mvUnavailable, style: const TextStyle(color: Colors.white)),
+                        child: Text(
+                          l.mvUnavailable,
+                          style: const TextStyle(color: Colors.white),
+                        ),
                       ),
                     ),
                     const Positioned(top: 8, left: 8, child: _BackButton()),
@@ -131,20 +146,29 @@ class _BodyState extends State<_Body> {
                 )
               : Video(
                   controller: _controller,
-                  controls: (_) =>
-                      MvControls(player: _player, title: d.name, streams: _streams, stream: _stream, onStream: _switch),
+                  controls: (_) => MvControls(
+                    player: _player,
+                    title: d.name,
+                    streams: _streams,
+                    stream: _stream,
+                    onStream: _switch,
+                  ),
                 ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Text(d.name, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+          child: Text(
+            d.name,
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
           child: Text(
             [
               if (d.uploader.isNotEmpty) d.uploader,
-              if (d.playCount > BigInt.zero) '▶ ${formatCount(l, d.playCount.toInt())}',
+              if (d.playCount > BigInt.zero)
+                '▶ ${formatCount(l, d.playCount.toInt())}',
               if (d.publishDate.isNotEmpty) d.publishDate,
             ].join(' · '),
             style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
@@ -158,15 +182,25 @@ class _BodyState extends State<_Body> {
               borderRadius: BorderRadius.circular(16),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
-                onTap: s.mid.isEmpty ? null : () => openPage(context, SingerPage.route(s.mid, s.name)),
+                onTap: s.mid.isEmpty
+                    ? null
+                    : () => openPage(context, SingerPage.route(s.mid, s.name)),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
                   child: Row(
                     children: [
-                      ClipOval(child: Cover(singerAvatar(s.mid), size: 40, radius: 0)),
+                      ClipOval(
+                        child: Cover(singerAvatar(s.mid), size: 40, radius: 0),
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(s.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                        child: Text(
+                          s.name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                       Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
                     ],
@@ -176,7 +210,10 @@ class _BodyState extends State<_Body> {
             ),
           ),
         if (d.description.isNotEmpty)
-          Padding(padding: const EdgeInsets.fromLTRB(16, 14, 16, 0), child: IntroText(d.description)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            child: IntroText(d.description),
+          ),
         const BottomSpacer(),
       ],
     );

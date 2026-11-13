@@ -196,7 +196,7 @@ PC 取链接会带 `ctx=0`；未登录的 `song_url` 调用不加这个字段。
 
 ### 音质文件映射
 
-文件名公式：`前缀 + media_mid + media_mid + "." + 扩展名`。以下为项目中的本地映射，不代表每首歌都提供这些文件。
+明文路径使用 `前缀 + media_mid + media_mid + "." + 扩展名`。下表保留项目的本地映射，各歌曲提供的文件以服务端响应为准。
 
 | `Quality` | 前缀 | 扩展名 | `file` 下的大小字段 | 当前处理 |
 | --- | --- | --- | --- | --- |
@@ -205,10 +205,9 @@ PC 取链接会带 `ctx=0`；未登录的 `song_url` 调用不加这个字段。
 | Atmos | Q000 | flac | `size_new[1]` | 扩展音质候选 |
 | Atmos51 | Q001 | flac | `size_new[2]` | 扩展音质候选 |
 | Atmos71 | Q003 | ogg | `size_new[6]` | 扩展音质候选 |
-| Dolby | D004 | mp4 | `size_dolby` | 未通过播放验证，不请求播放 |
-| Dts | DT03 | mp4 | `size_new[9]` | 未通过播放验证，不请求播放 |
-| Vinyl | V0M0 | mflac | `size_new[4]` | 不支持，不处理加密音频 |
-| Aicodec | TL01 | nac | `size_new[7]` | 不支持，不处理加密音频 |
+| Dolby | D004 | mp4 | `size_dolby` | 明文样本为 AC-4，播放走下表的 `D0M1` |
+| Dts | DT03 | mp4 | `size_new[9]` | Windows x64 和 Android ARM64 可用本地 DTS:X 解码库 |
+| Aicodec | TL01 | nac | `size_new[7]` | Android ARM64 和 Windows x64 可用内置模型解码加密 NAC |
 | Lossless | F000 | flac | `size_flac` | 无损候选 |
 | High | M800 | mp3 | `size_320mp3` | 高品质候选 |
 | Standard | M500 | mp3 | `size_128mp3` | 标准候选 |
@@ -221,6 +220,41 @@ PC 取链接会带 `ctx=0`；未登录的 `song_url` 调用不加这个字段。
 | Aac48 | C200 | m4a | `size_48aac` | 同上 |
 
 仅大小大于零的音质档位进入候选列表，再按授权和 CDN 检查计算 `available/reason`。`104003` 映射为当前账号无权限，`104013` 映射为设备受限，其他没有链接的授权结果映射为 `NoLink`；这些是项目内解释，不是完整的官方错误码定义。
+
+登录后，明文候选不可用时，可在降档前通过 PC 公共通道调用 `music.vkey.GetEVkey.CgiGetEVkey`（`ctx=1`）。杜比全景声直接请求 `D0M1`。`musicfile[]` 使用歌曲详情的 `file.media_mid`，`filename[]` 使用下表的文件 ID，两个字段都只拼接一次 ID。队列预取的样本中，原请求的部分媒体 ID 与歌曲详情不同，实际文件名使用歌曲详情的 ID。
+
+| 档位 | 加密文件 | `filename[]` 的 ID | 解密后的容器 |
+| --- | --- | --- | --- |
+| Master | `AIM0…mflac` | `track.vs[3]` | FLAC |
+| Atmos | `Q0M0…mflac` | `track.vs[29]` | FLAC |
+| Lossless | `F0M0…mflac` | `file.media_mid` | FLAC |
+| High | `O8M0…mgg` | `file.media_mid` | Ogg |
+| Dolby | `D0M1…mmp4` | `file.media_mid` | MP4，样本音轨为 E-AC-3 |
+| Dts | `DTM3…mmp4` | `track.vs[30]` | MP4，音轨为 DTS-UHD Profile 2 |
+
+加密候选须返回匹配文件的授权链接及有效 `ekey`，并能从 CDN 首段解出对应的容器头。Rust 回环中转按 CDN 的字节偏移解密，数据不写入 Kanade 的音频缓存。使用 2026-11-09 PC 抓包中的登录态重新取源，母带、全景声、SQ 和 HQ 均通过 FFmpeg 的回环读取、跳转和解码验证。
+
+同日 Hi-Res 补抓的 `pc-hires/raw/067` 记录了《小小奇迹》的 `RSM1` 下载授权。对同一首歌，`UrlGetVkey` 按现有命名规则返回了 `RS01` 明文链接，CDN 文件头为 `fLaC`，总长 48,836,278 字节，与 `file.size_hires` 一致。Kanade 的 Hi-Res 播放沿用这个明文路径。`RSM1` 也已通过 `CgiGetEVkey` 单独验证，解密后为 96 kHz、24 bit FLAC，跳到第 7 秒后可解码出声音。
+
+另用同一登录态重新取得以下三档的授权链接和密钥。三份完整样本均可解密，独立请求并解密的字节范围与完整样本对应位置一致。Windows 内核测试直接加载 Kanade 随包的 libmpv，使用 SQ FLAC 样本作对照。
+
+| 档位 | 加密文件与 ID | 解密及解码结果 |
+| --- | --- | --- |
+| 杜比全景声 | `D0M1…mmp4`，`file.media_mid` | MP4 内为 E-AC-3（`ec-3`），FFmpeg 识别为 Dolby Digital Plus + Atmos。Windows libmpv 跳至第 7 秒后输出非静音的 48 kHz 六声道 PCM。对象渲染和设备透传待验证。 |
+| DTS:X | `DTM3…mmp4`，`track.vs[30]` | MP4 音轨为 DTS-UHD Profile 2（`dtsx`）。《Mood》的解密文件与 `DT03` 明文文件逐字节相同。重新切分裸流会漏帧，Windows 解码器按 MP4 原始 sample 边界完整解出三首真实样本。 |
+| NAC | `TLM1…mnac`，`track.vs[28]` | 解密后以 `NAC_` 开头。Android ARM64 和 Windows x64 的专用解码器通过 MNN 生成临时 WAV，再交给播放器。 |
+
+两端使用同一份本地模型 `android/app/nac-local/7187332.mnn`，也可用环境变量 `KANADE_NAC_MODEL` 指定路径。执行 `flutter build apk --target-platform android-arm64` 或 `flutter build windows` 时，构建会校验模型的 SHA-256 并嵌入原生库。只有加载到该库并验证授权音源后，现有音质菜单才显示 AI 音质。Rust 下载完整首后边解码边写临时 WAV（文件头预先写好总长度），解出第一段就让播放器打开本机地址。从上次位置恢复或往后拖到还没解出的位置时，本机中转会等解码追上，所以播放这类音源时关闭 mpv 的网络超时（其他音源仍是 media_kit 默认的 5 秒）。切歌时会取消解码并回收临时 WAV。
+
+Windows x64 使用抓包登录态实测了音质探测、重新取源、本机解码、HTTP Range 和跳转后的非静音输出。关闭音频缓存时，解码产物只供当前音源使用，切歌后回收。
+
+Windows x64 的 DTS:X 从 `kanade.exe` 旁的 `dts-runtime\DTSXDecoder.dll` 加载。解码库及其运行时依赖由使用者提供：放入 Git 忽略的 `windows/dts-local/` 后构建，会拷贝到产物的 `dts-runtime\`；也可直接放进已构建程序的该目录。由于该接口取决于二进制布局，当前只加载 SHA-256 为 `0fb48a12aef354016992e5fc2a34ea7ef4852711a5f48a66bdff07661285c4ca` 的版本。输出为 48 kHz、24 bit、5.1 PCM。
+
+Android ARM64 的 DTS:X 由构建者提供兼容的 DTS Playback SDK、配置和许可。将 `libDTSPlaybackSDK.so`、`dts_config.yaml` 和 `dts_hpx.lic` 放入 Git 忽略的 `android/app/dts-local/`，或用 `KANADE_DTS_ANDROID_RUNTIME` 指向该目录，再构建 APK。当前验证的 SDK SHA-256 为 `71b9872cca9e031b293eef7ec8a5762cf1069ad8762a9e17f261d20d1bff95d1`。SDK 输出 48 kHz 双声道浮点 PCM。
+
+该 SDK 的 ELF 段按 4 KB 对齐，16 KB 页大小的 Android 环境尚未验证。
+
+两端均在解码器初始化成功且当前歌曲有授权音源时显示 DTS:X。播放优先用明文 `DT03`，取不到时尝试 `DTM3`。与 NAC 一样边解码边写临时 WAV、解出第一段就交给播放器，切歌时回收。WAV 总长度按 MP4 的 `mdhd` 时长预先计算，解码结果超出部分丢弃、不足部分补静音。
 
 取链接从用户指定音质开始降级。Master / Hires / Atmos 等扩展档位按 `指定档位 → Lossless → High → Standard → Low`；High 为 `High → Standard → Low`；Lossless 为 `Lossless → High → Standard → Low`。额外编码的回退规则以 `quality::playback_chain` 为准。返回 `SongUrl.quality` 是最终取得的音质，调用方不能始终显示请求值。
 
@@ -498,48 +532,28 @@ QQ 音乐不支持用户自己写简介，PC 主页简介位置显示的就是 `
 
 模块：`music.globalComment.CommentRead`，使用内嵌页通道，不在本地强制检查登录态。当前只提供读取，不提供发布、删除、点赞评论。
 
-### 最新评论，首批附热门评论
+### 推荐 / 最热 / 最新（Android 参数）
 
-完整方法：`music.globalComment.CommentRead.GetNewCommentList`。
+`comment_feed(target,id,sort,cursor)` 和 `reply_feed(root_id,cursor)` 按 [Android 评论页抓包](qqmusic-comments-android-capture.md)的参数请求，
+仍走内嵌页通道（2026-11-11 重放确认结果与 Android 一致），每页 15 条，回复第一页 6 条、之后 5 条。
+`BizType=1` 为歌曲，`2` 为专辑；`BizId` 是相应数字 ID 的字符串。
 
-```json
-{
-  "BizType": 1,
-  "BizId": "42",
-  "LastCommentSeqNo": "",
-  "PageSize": 25,
-  "PageNum": 0,
-  "FromCommentId": "",
-  "WithHot": 1,
-  "PicEnable": 1,
-  "LastTotal": 0,
-  "LastTotalVer": "0"
-}
-```
+| `sort` | 方法 | 下一页带上 |
+| --- | --- | --- |
+| `Recommend` | `GetRecCommentList` | `RecOffset`、`PageNum`、上一页最后一条的 `SeqNo/HotScore/RecScore`、`CommentIds` |
+| `Hot` | `GetHotCommentList`，`HotType=6` | `PageNum`、上一页最后一条的 `HotScore/CmId/SeqNo` |
+| `Latest` | `GetNewCommentList`，不传 `WithHot` | `PageNum`、上一页最后一条的 `CmId/SeqNo` |
 
-`BizType=1` 为歌曲，`2` 为专辑；`BizId` 是相应数字 ID 的字符串。`PageNum` 从 `0` 开始，后续页传上一页最后一条 `Comment.seq_no` 到 `LastCommentSeqNo`，并把 `WithHot` 设为 `0`。
+三者都带 `LastTotal`、`LastTotalVer`（上一页的 `TotalVer`）和 `LastRspVer`（第一页的 `RspVer`，后续页的响应里它是空的）。
+这些值由 Rust 打包成 `CommentFeed.cursor` 字符串，界面取下一页时原样传回，第一页传空字符串。
 
-最新列表取 `CommentList.Comments[]`，第一页热门列表取 `CommentList2.Comments[]`；总数和是否有下一页读取 `CommentList.Total/HasMore`。当前未单独调用抓包中存在的 `GetHotCommentList`。
+推荐列表的翻页不是按偏移取：第一页响应的 `CommentList.CommentIds` 是后续全部评论的 id（样本 285 个），
+第 N 页把其中第 `(N-1)*15` 起的 15 个放进请求的 `CommentIds`，服务器返回这 15 条的正文；传别的 id 就返回别的评论。
+未登录时第一页没有 `CommentIds`，推荐只有 15 条，所以 `has_more` 以 id 是否用完为准，不看 `HasMore`。
 
-### 评论回复
-
-完整方法：`music.globalComment.CommentRead.GetReplyCommentList`。
-
-```json
-{
-  "RootCmId": "<ROOT_COMMENT_ID>",
-  "LastCommentSeqNo": "",
-  "PageSize": 10,
-  "LastRankScore": "",
-  "RankType": 1,
-  "PicEnable": 1,
-  "PageNum": 0
-}
-```
-
-后续页 `LastRankScore="0"`，`PageNum` 递增，并传上一页最后一条 `seq_no`。回复也取 `CommentList.Comments[]`。由于样本中回复 `HasMore` 可能不准确，项目额外采用“当前页非空且 `(page+1)*10 < Total`”判断可继续加载。
-
+总数取顶层 `TotalCmNum`。回复的 `HasMore` 一直是 1，`has_more` 按“已取条数 < 第一页的 `Total`”判断。
 字段映射：`CmId → id`、`SeqNo → seq_no`、`Nick → nick`、`Avatar → avatar_url`、`Content → content`、`PubTime → time_secs`、`PraiseNum → praise_count`、`ReplyCnt → reply_count`；被回复用户取 `RepliedComments[0].Nick`。正文会去除完整的 `[em]…[/em]` 表情代码。
+带图评论读 `Pic → pic_url`、`PicSize`（`"宽x高"`）`→ pic_width/pic_height`；`Pic` 原地址不带 Cookie、不加参数可以直接下载。
 
 抓包笔记曾记录评论 `SubCode=0`；当前 `detail.rs` 没有额外检查 `SubCode`，只使用通用网关封装的业务码检查。不得据此宣称已严格校验评论所有内层结果码。
 
@@ -624,7 +638,7 @@ QQ / 微信会话交换前，当前实现会先清空旧会话；Cookie 登录�
 | 相似歌曲 | `get_similar_songs(song_id)` | `Vec<Song>` |
 | 其他用户 | `get_user_profile(euin)` / `get_user_public_playlists(euin,creator,page,page_size)` | `UserProfile` / `UserPlaylistPage` |
 | 用户收藏 | `get_user_assets(euin,kind,page,page_size)` | `UserAssetPage`；kind 为 `Song/Playlist/Album/Video` |
-| 评论 | `get_comments(target,id,page,last_seq_no)` / `get_comment_replies(root_id,page,last_seq_no)` | `CommentPage` |
+| 评论 | `get_comment_feed(target,id,sort,cursor)` / `get_reply_feed(root_id,cursor)` | `CommentFeed` |
 | 登录 | `create_login_qr(kind)` / `create_qq_app_login()` / `poll_login_qr(kind,qrsig)` / `login_with_cookie(cookie)` | `QrCode` / `QrCode` / `QrStatus` / `UserInfo` |
 | 本地用户状态 | `current_user()` / `logout()` | `Option<UserInfo>` / 成功为空 |
 
@@ -644,7 +658,7 @@ QQ / 微信会话交换前，当前实现会先清空旧会话；Cookie 登录�
 | `UserProfile` | `euin/name/avatar_url/fans_count/follow_count/playlist_count/followed/is_self/playlists_hidden` |
 | `UserAssetPage` | `songs/playlists/albums/videos/has_more/hidden` |
 | `RecommendFeed` | `sections/radar_seed/radar_cover`，区块含 `title/songs/playlists` |
-| `CommentPage` | `hot/latest/total/has_more` |
+| `CommentFeed` | `comments/total/has_more/cursor` |
 | `Lyric` | `lines[{time_ms,text,trans}]/plain` |
 | `QrCode` | `image/qrsig/url`；qrsig 在 QQ、微信、App 授权中分别是 qrsig、UUID、qrcodeID |
 | `QrStatus` | `Waiting/Scanned/Expired/Refused/Success{user}` |
@@ -689,6 +703,12 @@ QQ / 微信会话交换前，当前实现会先清空旧会话；Cookie 登录�
 
 对外 `ApiError` 包括：`NotLoggedIn`、`NoPlayableUrl`、`UnsupportedFormat`、`UnverifiedFormat`、`LoginFailed{detail}`、`InvalidCookie{missing}`、`ServerError{api,code}`、`BadResponse{detail}`、`Network{detail}`、`Internal{detail}`。错误码以字符串保留给应用层，界面翻译由 Dart 处理。
 
+### 登录失效与自动退出
+
+登录凭证失效时，需要登录的接口返回内层 `code=1000`，不带说明（2026-11-10 用假 musickey 实测 `GetLoginUserInfo` 和 `GetPlayRecentlyInfo` 都返回 1000，公开接口忽略凭证照常返回）。服务器不区分过期、被其他设备挤下线或在登录设备管理里删除了本设备。官方 PC 客户端的 `music.login.LoginServer.Login` 响应带 `musickeyCreateTime`（Unix 秒）和 `keyExpiresIn`（抓包为 259200，即 3 天），Kanade 登录时据此记下到期时间；Cookie 登录没有这两个字段。
+
+已登录请求转成 `ApiError` 时遇到 1000（[error.rs](../rust/src/qq/error.rs)），界面进程会在后台用 `GetPlayRecentlyInfo`（`requestCnt=1`）复核一次；仍是 1000 且期间没有换账号，就清掉登录态和接口缓存，通过 `watch_session_end` 推送原因：已过到期时间为 `Expired`，到期前被拒为 `Revoked`，不知道到期时间为 `Unknown`。启动时 `check_session` 也复核一次。Android 播放进程不订阅，登录态变化由界面进程同步。当前不使用 `refresh_key` 自动续期。
+
 `2000`、`80105` 等数字不应被文档擅自定义为唯一原因。历史记录中同一 `80105` 与凭据所用客户端上下文有关，但不能推广为所有账号的通用结论。也不能因为 `retCode=0` 就忽略外层业务错误。
 
 网络超时主要为 15 秒；微信长轮询、授权后台等待另有时限。写入超时可能表示结果不明确，当前专用写通道不会自动重发；应先读回状态或由用户在官方客户端核对。
@@ -720,7 +740,7 @@ HAR 凭据辅助函数依赖该文件内存在可解析的 `comm.uin/authst/tmeL
 
 `desktop_like_iris_and_restore` 会真实更改固定歌曲的收藏状态，需要另外明确授权，并显式设置 `QQMUSIC_TEST_SESSION_DB` 和 `QQMUSIC_TEST_ALLOW_LIKE_IRIS=1`。本次编写未执行该测试，也未执行任何其他账号写入。
 
-本轮新建歌单及关注操作已实现，真实应用写入尚待用户触发验证；原生签名与当前应用通道的差异没有被抓包成功替代。其余未提供或未完整验证的能力包括：收藏整个歌单、歌单及专辑完整大列表分页、最近播放增量同步与删除、推荐区块持续翻页、上传视频列表、评论写入、QRC 逐字歌词、加密音频解码，以及全账号 / 全平台兼容性。
+本轮新建歌单及关注操作已实现，真实应用写入尚待用户触发验证；原生签名与当前应用通道的差异没有被抓包成功替代。其余未提供或未完整验证的能力包括：收藏整个歌单、歌单及专辑完整大列表分页、最近播放增量同步与删除、推荐区块持续翻页、上传视频列表、评论写入、QRC 逐字歌词、Android NAC 真机播放，以及全账号 / 全平台兼容性。
 
 ## 源码与抓包笔记
 
@@ -741,6 +761,8 @@ HAR 凭据辅助函数依赖该文件内存在可解析的 `comm.uin/authst/tmeL
 | [歌单管理抓包](qqmusic-playlist-management-capture.md) | 改名与删除的官方请求样本 |
 | [最近播放抓包](qqmusic-recent-plays-capture.md) | 云端记录读取、播放上报 |
 | [Android 最近播放分类抓包](qqmusic-recent-plays-android-capture.md) | 专辑、歌单、电台、有声、视频各 `type`，增量同步与计数接口 |
+| [Android 排行榜抓包](qqmusic-toplist-android-capture.md) | 目录分组、往期、分页、排名变化 `rankType`、歌曲标签，及与 PC 模块的对照 |
+| [Android 评论页抓包](qqmusic-comments-android-capture.md) | 推荐 / 最热 / 最新 / 语音 / 时刻 / 表白各 tab、翻页游标、回复分页，及与 PC 内嵌页的差异 |
 | [Android 播放页歌曲信息页抓包](qqmusic-player-detail-android-capture.md) | 右滑信息页的合并请求、栏目顺序、标签、相关歌单换一批、精选视频 |
 | [推荐页抓包](qqmusic-recommendations-capture.md) / [推荐封面抓包](qqmusic-recommendation-covers-capture.md) | 推荐结构、取歌与图片来源 |
 

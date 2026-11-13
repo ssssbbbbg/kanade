@@ -482,12 +482,6 @@ abstract class AppLocalizations {
   /// **'AI 音质'**
   String get qualityAiCodec;
 
-  /// No description provided for @qualityVinyl.
-  ///
-  /// In zh, this message translates to:
-  /// **'黑胶'**
-  String get qualityVinyl;
-
   /// No description provided for @reasonUnsupported.
   ///
   /// In zh, this message translates to:
@@ -794,6 +788,18 @@ abstract class AppLocalizations {
   /// **'播放队列'**
   String get queue;
 
+  /// No description provided for @removeFromQueue.
+  ///
+  /// In zh, this message translates to:
+  /// **'从队列移除'**
+  String get removeFromQueue;
+
+  /// No description provided for @reorderQueue.
+  ///
+  /// In zh, this message translates to:
+  /// **'拖动调整顺序'**
+  String get reorderQueue;
+
   /// No description provided for @playbackError.
   ///
   /// In zh, this message translates to:
@@ -980,23 +986,11 @@ abstract class AppLocalizations {
   /// **'评论'**
   String get comments;
 
-  /// No description provided for @hotComments.
+  /// No description provided for @commentsRecommended.
   ///
   /// In zh, this message translates to:
-  /// **'热门评论'**
-  String get hotComments;
-
-  /// No description provided for @latestComments.
-  ///
-  /// In zh, this message translates to:
-  /// **'最新评论'**
-  String get latestComments;
-
-  /// No description provided for @commentTotal.
-  ///
-  /// In zh, this message translates to:
-  /// **'共 {count} 条评论'**
-  String commentTotal(int count);
+  /// **'推荐'**
+  String get commentsRecommended;
 
   /// No description provided for @noComments.
   ///
@@ -1004,17 +998,47 @@ abstract class AppLocalizations {
   /// **'还没有评论'**
   String get noComments;
 
+  /// No description provided for @commentCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 条评论'**
+  String commentCount(String count);
+
+  /// No description provided for @timeJustNow.
+  ///
+  /// In zh, this message translates to:
+  /// **'刚刚'**
+  String get timeJustNow;
+
+  /// No description provided for @timeMinutesAgo.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 分钟前'**
+  String timeMinutesAgo(int count);
+
+  /// No description provided for @timeHoursAgo.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 小时前'**
+  String timeHoursAgo(int count);
+
+  /// No description provided for @timeDaysAgo.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 天前'**
+  String timeDaysAgo(int count);
+
   /// No description provided for @replies.
   ///
   /// In zh, this message translates to:
   /// **'回复'**
   String get replies;
 
-  /// No description provided for @viewReplies.
+  /// No description provided for @replyCount.
   ///
   /// In zh, this message translates to:
-  /// **'查看 {count} 条回复'**
-  String viewReplies(int count);
+  /// **'{count} 条回复'**
+  String replyCount(int count);
 
   /// No description provided for @replyTo.
   ///
@@ -1163,13 +1187,13 @@ abstract class AppLocalizations {
   /// No description provided for @songFade.
   ///
   /// In zh, this message translates to:
-  /// **'切歌淡入淡出'**
+  /// **'播放过渡'**
   String get songFade;
 
   /// No description provided for @songFadeHint.
   ///
   /// In zh, this message translates to:
-  /// **'上一首渐渐变小，下一首渐渐变大'**
+  /// **'切歌、暂停和继续播放时音量渐变'**
   String get songFadeHint;
 
   /// No description provided for @songFadeOff.
@@ -1267,6 +1291,72 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'确定退出登录？'**
   String get logoutConfirm;
+
+  /// No description provided for @sessionEndedTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'登录已失效'**
+  String get sessionEndedTitle;
+
+  /// No description provided for @sessionExpired.
+  ///
+  /// In zh, this message translates to:
+  /// **'登录已超过有效期，已自动退出。重新登录后就能继续同步歌单和播放会员歌曲。'**
+  String get sessionExpired;
+
+  /// No description provided for @sessionRevoked.
+  ///
+  /// In zh, this message translates to:
+  /// **'登录还没到期就被 QQ 音乐注销了，已自动退出。'**
+  String get sessionRevoked;
+
+  /// No description provided for @sessionRejected.
+  ///
+  /// In zh, this message translates to:
+  /// **'QQ 音乐不再接受当前的登录，已自动退出。'**
+  String get sessionRejected;
+
+  /// No description provided for @sessionCausesTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'可能的原因'**
+  String get sessionCausesTitle;
+
+  /// No description provided for @sessionCauseOtherDevice.
+  ///
+  /// In zh, this message translates to:
+  /// **'账号在其他设备登录，这里被挤下线'**
+  String get sessionCauseOtherDevice;
+
+  /// No description provided for @sessionCauseDeviceRemoved.
+  ///
+  /// In zh, this message translates to:
+  /// **'在「登录设备管理」里删除了这台设备'**
+  String get sessionCauseDeviceRemoved;
+
+  /// No description provided for @sessionCausePassword.
+  ///
+  /// In zh, this message translates to:
+  /// **'修改了账号密码'**
+  String get sessionCausePassword;
+
+  /// No description provided for @sessionCauseExpired.
+  ///
+  /// In zh, this message translates to:
+  /// **'登录超过了有效期'**
+  String get sessionCauseExpired;
+
+  /// No description provided for @loginAgain.
+  ///
+  /// In zh, this message translates to:
+  /// **'重新登录'**
+  String get loginAgain;
+
+  /// No description provided for @later.
+  ///
+  /// In zh, this message translates to:
+  /// **'稍后'**
+  String get later;
 
   /// No description provided for @ok.
   ///
@@ -1729,6 +1819,198 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'关闭定时'**
   String get sleepTimerOff;
+
+  /// No description provided for @close.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭'**
+  String get close;
+
+  /// No description provided for @settingsAbout.
+  ///
+  /// In zh, this message translates to:
+  /// **'关于'**
+  String get settingsAbout;
+
+  /// No description provided for @checkUpdate.
+  ///
+  /// In zh, this message translates to:
+  /// **'检查更新'**
+  String get checkUpdate;
+
+  /// No description provided for @currentVersion.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前版本 {version}'**
+  String currentVersion(String version);
+
+  /// No description provided for @updateChecking.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在检查…'**
+  String get updateChecking;
+
+  /// No description provided for @upToDate.
+  ///
+  /// In zh, this message translates to:
+  /// **'已是最新'**
+  String get upToDate;
+
+  /// No description provided for @updateCheckFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'检查更新失败，稍后再试'**
+  String get updateCheckFailed;
+
+  /// No description provided for @updatePreview.
+  ///
+  /// In zh, this message translates to:
+  /// **'接收预览版更新'**
+  String get updatePreview;
+
+  /// No description provided for @updatePreviewHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'测试版也会提醒，可能不稳定'**
+  String get updatePreviewHint;
+
+  /// No description provided for @updateMirror.
+  ///
+  /// In zh, this message translates to:
+  /// **'通过镜像下载更新'**
+  String get updateMirror;
+
+  /// No description provided for @updateMirrorHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'打开后不连接 GitHub，全部走镜像'**
+  String get updateMirrorHint;
+
+  /// No description provided for @updateAvailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'发现新版本 {version}'**
+  String updateAvailable(String version);
+
+  /// No description provided for @updatePreviewBadge.
+  ///
+  /// In zh, this message translates to:
+  /// **'预览版'**
+  String get updatePreviewBadge;
+
+  /// No description provided for @updateCurrent.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前 {version}'**
+  String updateCurrent(String version);
+
+  /// No description provided for @updateDate.
+  ///
+  /// In zh, this message translates to:
+  /// **'{date} 发布'**
+  String updateDate(String date);
+
+  /// No description provided for @updateInstaller.
+  ///
+  /// In zh, this message translates to:
+  /// **'安装包'**
+  String get updateInstaller;
+
+  /// No description provided for @updateInstallerHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'运行安装程序覆盖更新'**
+  String get updateInstallerHint;
+
+  /// No description provided for @updateArchive.
+  ///
+  /// In zh, this message translates to:
+  /// **'压缩包'**
+  String get updateArchive;
+
+  /// No description provided for @updateArchiveHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'退出后自动替换文件'**
+  String get updateArchiveHint;
+
+  /// No description provided for @updateNow.
+  ///
+  /// In zh, this message translates to:
+  /// **'立即更新'**
+  String get updateNow;
+
+  /// No description provided for @updateSkip.
+  ///
+  /// In zh, this message translates to:
+  /// **'跳过这个版本'**
+  String get updateSkip;
+
+  /// No description provided for @updateDownloading.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在下载 {version}'**
+  String updateDownloading(String version);
+
+  /// No description provided for @updateDownloadingHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'下载完会自动校验并安装'**
+  String get updateDownloadingHint;
+
+  /// No description provided for @updateConnecting.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在连接下载源…'**
+  String get updateConnecting;
+
+  /// No description provided for @updateSource.
+  ///
+  /// In zh, this message translates to:
+  /// **'下载源：{source}'**
+  String updateSource(String source);
+
+  /// No description provided for @updateFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'更新失败'**
+  String get updateFailed;
+
+  /// No description provided for @updateNetworkFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'没能下载下来。检查网络后重试，或在设置里切换镜像。'**
+  String get updateNetworkFailed;
+
+  /// No description provided for @updateCorrupted.
+  ///
+  /// In zh, this message translates to:
+  /// **'文件校验没通过，可能是下载源出了问题。没有安装任何东西。'**
+  String get updateCorrupted;
+
+  /// No description provided for @updateNotWritable.
+  ///
+  /// In zh, this message translates to:
+  /// **'没有权限替换程序目录里的文件，请改用安装包。'**
+  String get updateNotWritable;
+
+  /// No description provided for @updateInstallFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'没能打开安装程序。'**
+  String get updateInstallFailed;
+
+  /// No description provided for @updateUseInstaller.
+  ///
+  /// In zh, this message translates to:
+  /// **'改用安装包'**
+  String get updateUseInstaller;
+
+  /// No description provided for @updateOpenBrowser.
+  ///
+  /// In zh, this message translates to:
+  /// **'在浏览器中下载'**
+  String get updateOpenBrowser;
 }
 
 class _AppLocalizationsDelegate

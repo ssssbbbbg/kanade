@@ -13,6 +13,11 @@ impl ApiError {
     pub fn bad_response(detail: impl Into<String>) -> Self {
         Self::BadResponse { detail: detail.into() }
     }
+
+    /// 接口返回 1000：登录凭证无效。部分调用处把 `Option` 直接格式化成了 `Some(1000)`。
+    pub fn is_auth_rejected(&self) -> bool {
+        matches!(self, Self::ServerError { code, .. } if code == "1000" || code == "Some(1000)")
+    }
 }
 
 impl fmt::Display for ApiError {
@@ -34,8 +39,15 @@ impl fmt::Display for ApiError {
 
 impl std::error::Error for ApiError {}
 
+/// 纯错误转换；登录凭证复核由 API 边界显式触发。
 impl From<anyhow::Error> for ApiError {
     fn from(err: anyhow::Error) -> Self {
+        Self::convert(err)
+    }
+}
+
+impl ApiError {
+    fn convert(err: anyhow::Error) -> Self {
         if let Some(e) = err.downcast_ref::<ApiError>() {
             return e.clone();
         }
@@ -59,6 +71,21 @@ mod tests {
     use anyhow::{anyhow, bail, Context, Result};
 
     use super::*;
+
+    #[test]
+    fn conversion_does_not_check_session() {
+        let before = crate::qq::client::SESSION_CHECKS.with(|count| count.get());
+        let error = anyhow::Error::new(ApiError::ServerError {
+            api: "test".into(),
+            code: "1000".into(),
+        })
+        .context("request context");
+        assert!(ApiError::from(error).is_auth_rejected());
+        assert_eq!(
+            crate::qq::client::SESSION_CHECKS.with(|count| count.get()),
+            before
+        );
+    }
 
     #[test]
     fn keeps_error_codes_through_anyhow() {

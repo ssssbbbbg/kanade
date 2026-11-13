@@ -33,7 +33,8 @@ class LocateCurrentSong extends StatefulWidget {
   State<LocateCurrentSong> createState() => _LocateCurrentSongState();
 }
 
-class _LocateCurrentSongState extends State<LocateCurrentSong> with SingleTickerProviderStateMixin {
+class _LocateCurrentSongState extends State<LocateCurrentSong>
+    with SingleTickerProviderStateMixin {
   static const _buttonSize = 44.0;
   static const _margin = 16.0;
 
@@ -44,17 +45,44 @@ class _LocateCurrentSongState extends State<LocateCurrentSong> with SingleTicker
   bool _show = false;
 
   final _flashIndex = ValueNotifier<int?>(null);
-  late final _flash = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))
-    ..addStatusListener((s) {
-      if (s == AnimationStatus.completed) _flashIndex.value = null;
-    });
+  late final _flash =
+      AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 1400),
+      )..addStatusListener((s) {
+        if (s == AnimationStatus.completed) _flashIndex.value = null;
+      });
 
   /// 两下闪：亮、回落一点、再亮、慢慢褪掉。
   late final _flashValue = TweenSequence<double>([
-    TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: Curves.easeOut)), weight: 12),
-    TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.25).chain(CurveTween(curve: Curves.easeInOut)), weight: 18),
-    TweenSequenceItem(tween: Tween(begin: 0.25, end: 1.0).chain(CurveTween(curve: Curves.easeInOut)), weight: 16),
-    TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeIn)), weight: 54),
+    TweenSequenceItem(
+      tween: Tween(
+        begin: 0.0,
+        end: 1.0,
+      ).chain(CurveTween(curve: Curves.easeOut)),
+      weight: 12,
+    ),
+    TweenSequenceItem(
+      tween: Tween(
+        begin: 1.0,
+        end: 0.25,
+      ).chain(CurveTween(curve: Curves.easeInOut)),
+      weight: 18,
+    ),
+    TweenSequenceItem(
+      tween: Tween(
+        begin: 0.25,
+        end: 1.0,
+      ).chain(CurveTween(curve: Curves.easeInOut)),
+      weight: 16,
+    ),
+    TweenSequenceItem(
+      tween: Tween(
+        begin: 1.0,
+        end: 0.0,
+      ).chain(CurveTween(curve: Curves.easeIn)),
+      weight: 54,
+    ),
   ]).animate(_flash);
 
   @override
@@ -66,7 +94,10 @@ class _LocateCurrentSongState extends State<LocateCurrentSong> with SingleTicker
 
   RenderSliverFixedExtentBoxAdaptor? get _sliver {
     final sliver = widget.listKey.currentContext?.findRenderObject();
-    return sliver is RenderSliverFixedExtentBoxAdaptor && sliver.geometry != null ? sliver : null;
+    return sliver is RenderSliverFixedExtentBoxAdaptor &&
+            sliver.geometry != null
+        ? sliver
+        : null;
   }
 
   double get _bottomInset => MediaQuery.paddingOf(context).bottom;
@@ -76,7 +107,8 @@ class _LocateCurrentSongState extends State<LocateCurrentSong> with SingleTicker
     final c = sliver.constraints;
     final extent = sliver.itemExtent!;
     final center = extent * i + extent / 2;
-    return center >= c.scrollOffset + c.overlap && center <= c.scrollOffset + c.remainingPaintExtent - _bottomInset;
+    return center >= c.scrollOffset + c.overlap &&
+        center <= c.scrollOffset + c.remainingPaintExtent - _bottomInset;
   }
 
   bool _scheduled = false;
@@ -106,10 +138,13 @@ class _LocateCurrentSongState extends State<LocateCurrentSong> with SingleTicker
     final extent = sliver.itemExtent!;
     final top = MediaQuery.paddingOf(context).top + GlassBackScaffold.topInset;
     final visible = pos.viewportDimension - top - _bottomInset;
-    final target = (sliver.constraints.precedingScrollExtent + extent * i + extent / 2 - top - visible * _anchor).clamp(
-      pos.minScrollExtent,
-      pos.maxScrollExtent,
-    );
+    final target =
+        (sliver.constraints.precedingScrollExtent +
+                extent * i +
+                extent / 2 -
+                top -
+                visible * _anchor)
+            .clamp(pos.minScrollExtent, pos.maxScrollExtent);
     // 远的先一下跳到离目标一屏多的地方，只滑最后这段：整段几千像素塞进半秒，
     // 一帧要跳好几行，看着一顿一顿的，减速也看不出来
     final lead = pos.viewportDimension * 1.2;
@@ -132,7 +167,9 @@ class _LocateCurrentSongState extends State<LocateCurrentSong> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    final mid = context.select<PlayerController, String?>((p) => p.current?.mid);
+    final mid = context.select<PlayerController, String?>(
+      (p) => p.current?.mid,
+    );
     _index = mid == null ? -1 : widget.songs.indexWhere((s) => s.mid == mid);
     // 切歌、列表筛选变了以后等这一帧排好版再看要不要显示
     _scheduleUpdate();
@@ -155,7 +192,11 @@ class _LocateCurrentSongState extends State<LocateCurrentSong> with SingleTicker
                   if (n.depth == 0) _scheduleUpdate();
                   return false;
                 },
-                child: _Scope(flashIndex: _flashIndex, flash: _flashValue, child: widget.child),
+                child: _Scope(
+                  flashIndex: _flashIndex,
+                  flash: _flashValue,
+                  child: widget.child,
+                ),
               ),
             ),
           ),
@@ -175,7 +216,11 @@ class _LocateCurrentSongState extends State<LocateCurrentSong> with SingleTicker
                   quality: KanadeGlass.navigationQuality,
                   semanticLabel: AppLocalizations.of(context).locateCurrentSong,
                   onPressed: _locate,
-                  icon: Icon(Icons.my_location_rounded, size: 20, color: scheme.onSurface),
+                  icon: Icon(
+                    Icons.my_location_rounded,
+                    size: 20,
+                    color: scheme.onSurface,
+                  ),
                 ),
               ),
             ),
@@ -187,13 +232,18 @@ class _LocateCurrentSongState extends State<LocateCurrentSong> with SingleTicker
 }
 
 class _Scope extends InheritedWidget {
-  const _Scope({required this.flashIndex, required this.flash, required super.child});
+  const _Scope({
+    required this.flashIndex,
+    required this.flash,
+    required super.child,
+  });
 
   final ValueNotifier<int?> flashIndex;
   final Animation<double> flash;
 
   @override
-  bool updateShouldNotify(_Scope old) => old.flashIndex != flashIndex || old.flash != flash;
+  bool updateShouldNotify(_Scope old) =>
+      old.flashIndex != flashIndex || old.flash != flash;
 }
 
 /// 定位到这一行后背景闪两下。外面没有 [LocateCurrentSong] 时原样显示 [child]。
@@ -217,7 +267,9 @@ class LocateHighlight extends StatelessWidget {
               animation: scope.flash,
               child: child,
               builder: (context, child) => DecoratedBox(
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.2 * scope.flash.value)),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.2 * scope.flash.value),
+                ),
                 child: child,
               ),
             ),

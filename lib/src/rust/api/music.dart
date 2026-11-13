@@ -10,6 +10,8 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 import 'types.dart';
 
+// These functions are ignored because they are not marked as `pub`: `api_error`
+
 /// 设置数据目录（SQLite 缓存和登录态存放处）。启动时调用一次。
 Future<void> initCore({required String dataDir}) =>
     RustLib.instance.api.crateApiMusicInitCore(dataDir: dataDir);
@@ -69,6 +71,10 @@ Future<SongUrl> getSongUrl({
   quality: quality,
 );
 
+/// 这台设备能否播放该音质；DTS:X、360RA、NAC 缺少解码器时为 false。
+bool qualitySupported({required Quality quality}) =>
+    RustLib.instance.api.crateApiMusicQualitySupported(quality: quality);
+
 /// 比 `quality` 低一档的音质；已是最低档时为 None。拿到链接却播不了时用来降级重试。
 Quality? lowerQuality({required Quality quality}) =>
     RustLib.instance.api.crateApiMusicLowerQuality(quality: quality);
@@ -91,16 +97,22 @@ void removeCachedAudio({required String mid, required Quality quality}) =>
       quality: quality,
     );
 
-/// 把播放链接换成边播边存的本机地址；缓存关闭时原样返回。
+/// 加密音频走本机解密。普通音频在启用缓存时走边播边存的本机地址。
 String streamAudio({
   required String mid,
   required Quality quality,
   required String url,
+  String? ekey,
 }) => RustLib.instance.api.crateApiMusicStreamAudio(
   mid: mid,
   quality: quality,
   url: url,
+  ekey: ekey,
 );
+
+/// 等待需要整曲解码的音源准备好，再交给播放器。
+Future<void> waitForDecodedAudio({required String url}) =>
+    RustLib.instance.api.crateApiMusicWaitForDecodedAudio(url: url);
 
 /// 歌曲缓存上限（MB），0 表示关闭。
 PlatformInt64 getAudioCacheLimitMb() =>
@@ -125,6 +137,9 @@ Future<List<QualityOption>> getSongQualities({required String mid}) =>
 
 Future<Lyric> getLyric({required String mid, required PlatformInt64 id}) =>
     RustLib.instance.api.crateApiMusicGetLyric(mid: mid, id: id);
+
+Future<ChorusRange?> getSongChorus({required PlatformInt64 id}) =>
+    RustLib.instance.api.crateApiMusicGetSongChorus(id: id);
 
 /// 听歌识曲：`pcm` 是从开始录到现在的全部录音（8 kHz、16 位小端、单声道），
 /// 同一次识别的多次调用传同一个 `session_id`。还没认出来时返回 None，继续录音再试。
@@ -284,27 +299,26 @@ Future<UserAssetPage> getUserAssets({
   pageSize: pageSize,
 );
 
-/// 评论第 `page` 页（从 0 开始），`last_seq_no` 是上一页最后一条的 `seq_no`，第一页传空。
-Future<CommentPage> getComments({
+/// 推荐 / 最热 / 最新评论。`cursor` 第一页传空字符串，之后传上一页返回的 `cursor`。
+Future<CommentFeed> getCommentFeed({
   required CommentTarget target,
   required PlatformInt64 id,
-  required int page,
-  required String lastSeqNo,
-}) => RustLib.instance.api.crateApiMusicGetComments(
+  required CommentSort sort,
+  required String cursor,
+}) => RustLib.instance.api.crateApiMusicGetCommentFeed(
   target: target,
   id: id,
-  page: page,
-  lastSeqNo: lastSeqNo,
+  sort: sort,
+  cursor: cursor,
 );
 
-Future<CommentPage> getCommentReplies({
+/// 某条评论下的回复，翻页方式同 `get_comment_feed`。
+Future<CommentFeed> getReplyFeed({
   required String rootId,
-  required int page,
-  required String lastSeqNo,
-}) => RustLib.instance.api.crateApiMusicGetCommentReplies(
+  required String cursor,
+}) => RustLib.instance.api.crateApiMusicGetReplyFeed(
   rootId: rootId,
-  page: page,
-  lastSeqNo: lastSeqNo,
+  cursor: cursor,
 );
 
 /// 自己创建的歌单（需要登录），加入歌单时选择用。
@@ -383,6 +397,13 @@ Future<UserInfo> loginWithCookie({required String cookie}) =>
 
 UserInfo? currentUser() => RustLib.instance.api.crateApiMusicCurrentUser();
 
+/// 登录凭证被服务器拒绝、已自动退出登录时推送原因。只在界面进程订阅。
+Stream<SessionEndReason> watchSessionEnd() =>
+    RustLib.instance.api.crateApiMusicWatchSessionEnd();
+
+/// 向服务器复核当前登录态，失效时通过 `watch_session_end` 推送。启动时调用。
+Future<void> checkSession() => RustLib.instance.api.crateApiMusicCheckSession();
+
 Future<void> logout() => RustLib.instance.api.crateApiMusicLogout();
 
 Future<void> clearCache() => RustLib.instance.api.crateApiMusicClearCache();
@@ -393,3 +414,28 @@ String? getPref({required String key}) =>
 
 void setPref({required String key, required String value}) =>
     RustLib.instance.api.crateApiMusicSetPref(key: key, value: value);
+
+/// 读最新版本的清单；`preview` 时包含预览版，`mirror` 时只走镜像。
+Future<UpdateInfo> getLatestUpdate({
+  required bool preview,
+  required bool mirror,
+}) => RustLib.instance.api.crateApiMusicGetLatestUpdate(
+  preview: preview,
+  mirror: mirror,
+);
+
+/// 把 `tag` 发布里的 `asset` 下载到 `dest`，下完核对校验码。以结束事件收尾。
+Stream<UpdateEvent> downloadUpdate({
+  required String tag,
+  required UpdateAsset asset,
+  required String dest,
+  required bool mirror,
+}) => RustLib.instance.api.crateApiMusicDownloadUpdate(
+  tag: tag,
+  asset: asset,
+  dest: dest,
+  mirror: mirror,
+);
+
+void cancelUpdateDownload() =>
+    RustLib.instance.api.crateApiMusicCancelUpdateDownload();

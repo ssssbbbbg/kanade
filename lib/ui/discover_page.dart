@@ -47,24 +47,46 @@ class _DiscoverPageState extends State<DiscoverPage> {
       body: Column(
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 8, 16, 4),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              MediaQuery.paddingOf(context).top + 8,
+              16,
+              4,
+            ),
             child: ListenableBuilder(
               listenable: _pages,
               builder: (context, _) {
                 final at = _pages.hasClients ? (_pages.page ?? 0).round() : 0;
-                void go(int i) =>
-                    _pages.animateToPage(i, duration: const Duration(milliseconds: 300), curve: Curves.easeOutCubic);
+                void go(int i) => _pages.animateToPage(
+                  i,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                );
                 return Row(
                   children: [
-                    Pill(label: l.discoverRecommend, selected: at == 0, large: true, onTap: () => go(0)),
+                    Pill(
+                      label: l.discoverRecommend,
+                      selected: at == 0,
+                      large: true,
+                      onTap: () => go(0),
+                    ),
                     const SizedBox(width: 8),
-                    Pill(label: l.discoverToplists, selected: at == 1, large: true, onTap: () => go(1)),
+                    Pill(
+                      label: l.discoverToplists,
+                      selected: at == 1,
+                      large: true,
+                      onTap: () => go(1),
+                    ),
                     // Windows 上鼠标拉不动下拉刷新，改在这里放刷新键；只在推荐页显示，占位不变免得这排跳动
                     if (Platform.isWindows) ...[
                       const Spacer(),
                       Visibility.maintain(
                         visible: at == 0,
-                        child: RefreshIconButton(() => _recommend.currentState?.refresh() ?? Future.value()),
+                        child: RefreshIconButton(
+                          () =>
+                              _recommend.currentState?.refresh() ??
+                              Future.value(),
+                        ),
                       ),
                     ],
                   ],
@@ -79,7 +101,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
               removeTop: true,
               child: PageView(
                 controller: _pages,
-                children: [_KeepAlive(_RecommendTab(bodyKey: _recommend)), const _KeepAlive(_ToplistTab())],
+                children: [
+                  _KeepAlive(_RecommendTab(bodyKey: _recommend)),
+                  const _KeepAlive(_ToplistTab()),
+                ],
               ),
             ),
           ),
@@ -99,7 +124,8 @@ class _KeepAlive extends StatefulWidget {
   State<_KeepAlive> createState() => _KeepAliveState();
 }
 
-class _KeepAliveState extends State<_KeepAlive> with AutomaticKeepAliveClientMixin {
+class _KeepAliveState extends State<_KeepAlive>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
@@ -193,7 +219,11 @@ class _RecommendBodyState extends State<_RecommendBody> {
   void Function(Object) _failedToast() {
     final l = AppLocalizations.of(context);
     final overlay = Overlay.of(context, rootOverlay: true);
-    return (e) => Toast.show(overlay, l.loadFailed(errorText(l, e)), kind: ToastKind.error);
+    return (e) => Toast.show(
+      overlay,
+      l.loadFailed(errorText(l, e)),
+      kind: ToastKind.error,
+    );
   }
 
   @override
@@ -211,10 +241,15 @@ class _RecommendBodyState extends State<_RecommendBody> {
             for (final (i, section) in _sections.indexed) ...[
               if (section.playlists.isNotEmpty) ...[
                 _Header(
-                  section.title.isEmpty ? l.recommendedPlaylists : section.title,
+                  section.title.isEmpty
+                      ? l.recommendedPlaylists
+                      : section.title,
                   onRefresh: _onRefresh(section),
                 ),
-                _PlaylistRow(section.playlists, leading: i == radioAt ? radio : null),
+                _PlaylistRow(
+                  section.playlists,
+                  leading: i == radioAt ? radio : null,
+                ),
               ],
               if (section.songs.isNotEmpty)
                 ..._songSection(
@@ -222,14 +257,18 @@ class _RecommendBodyState extends State<_RecommendBody> {
                   section.title.isEmpty ? l.recommendedSongs : section.title,
                   section.songs,
                   // 同一栏的刷新键只放在第一个标题上
-                  onRefresh: section.playlists.isEmpty ? _onRefresh(section) : null,
+                  onRefresh: section.playlists.isEmpty
+                      ? _onRefresh(section)
+                      : null,
                 ),
             ],
             FeedColumn(key: ValueKey(_generation)),
             const SliverToBoxAdapter(child: BottomSpacer()),
           ],
         );
-        return Platform.isWindows ? list : RingRefresh(onRefresh: refresh, child: list);
+        return Platform.isWindows
+            ? list
+            : RingRefresh(onRefresh: refresh, child: list);
       },
     );
   }
@@ -244,9 +283,14 @@ class _RecommendBodyState extends State<_RecommendBody> {
     Future<void> Function()? onRefresh,
   }) {
     final shown = songs.length > _previewSongs ? _previewSongs : songs.length;
-    void viewAll() => Navigator.of(context).push(SongListPage.songs(title, songs));
+    void viewAll() =>
+        Navigator.of(context).push(SongListPage.songs(title, songs));
     return [
-      _Header(title, onMore: songs.length > shown ? viewAll : null, onRefresh: onRefresh),
+      _Header(
+        title,
+        onMore: songs.length > shown ? viewAll : null,
+        onRefresh: onRefresh,
+      ),
       // 点某一首时把整个区块作为播放列表
       SliverList.builder(
         itemCount: shown,
@@ -290,7 +334,8 @@ class _PlaylistRow extends StatelessWidget {
               badge: p.playCount > BigInt.zero
                   ? '▶ ${formatCount(AppLocalizations.of(context), p.playCount.toInt())}'
                   : null,
-              onTap: () => openPage(context, SongListPage.playlist(p.id, p.title)),
+              onTap: () =>
+                  openPage(context, SongListPage.playlist(p.id, p.title)),
             ),
           );
         },
@@ -307,8 +352,9 @@ class _Header extends StatelessWidget {
   final Future<void> Function()? onRefresh;
 
   @override
-  Widget build(BuildContext context) =>
-      SliverToBoxAdapter(child: SectionHeader(text, onMore: onMore, onRefresh: onRefresh));
+  Widget build(BuildContext context) => SliverToBoxAdapter(
+    child: SectionHeader(text, onMore: onMore, onRefresh: onRefresh),
+  );
 }
 
 /// 排行榜页：第一组（巅峰榜）做成横滑的大卡，露出前三名；其余各组排成封面网格。
@@ -326,7 +372,10 @@ class _ToplistTab extends StatelessWidget {
             for (final (i, g) in groups.indexed)
               if (g.lists.isNotEmpty) ...[
                 _Header(g.name),
-                if (i == 0) _FeaturedToplists(g.lists) else _ToplistGrid(g.lists),
+                if (i == 0)
+                  _FeaturedToplists(g.lists)
+                else
+                  _ToplistGrid(g.lists),
               ],
             const SliverToBoxAdapter(child: BottomSpacer()),
           ],
@@ -337,7 +386,8 @@ class _ToplistTab extends StatelessWidget {
 }
 
 void _openToplist(BuildContext context, TopList t) =>
-    Navigator.of(context).push(SongListPage.toplist(t.topId, t.period, t.title));
+    Navigator.of(context)
+        .push(SongListPage.toplist(t.topId, t.period, t.title));
 
 class _FeaturedToplists extends StatelessWidget {
   const _FeaturedToplists(this.lists);
@@ -390,7 +440,10 @@ class _FeaturedToplistCard extends StatelessWidget {
                         t.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -408,12 +461,19 @@ class _FeaturedToplistCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
-                              color: i == 0 ? scheme.primary : scheme.onSurfaceVariant,
+                              color: i == 0
+                                  ? scheme.primary
+                                  : scheme.onSurfaceVariant,
                             ),
                           ),
                         ),
                         Expanded(
-                          child: Text(s, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
+                          child: Text(
+                            s,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 13),
+                          ),
                         ),
                       ],
                     ),
@@ -439,7 +499,10 @@ class _ToplistGrid extends StatelessWidget {
     sliver: SliverLayoutBuilder(
       builder: (context, c) {
         const gap = 12.0;
-        final cols = ((c.crossAxisExtent + gap) / (140 + gap)).ceil().clamp(3, 8);
+        final cols = ((c.crossAxisExtent + gap) / (140 + gap)).ceil().clamp(
+          3,
+          8,
+        );
         final w = (c.crossAxisExtent - gap * (cols - 1)) / cols;
         return SliverGrid.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -452,7 +515,11 @@ class _ToplistGrid extends StatelessWidget {
           itemCount: lists.length,
           itemBuilder: (context, i) {
             final t = lists[i];
-            return PlaylistCard(title: t.title, coverUrl: t.coverUrl, onTap: () => _openToplist(context, t));
+            return PlaylistCard(
+              title: t.title,
+              coverUrl: t.coverUrl,
+              onTap: () => _openToplist(context, t),
+            );
           },
         );
       },
@@ -479,11 +546,14 @@ class _RadioCardsState extends State<_RadioCards> {
   void _prefetchGuess() {
     final f = api.getGuessYouLike();
     _guess = f;
-    f.then((songs) {
-      if (mounted && _guess == f) setState(() => _guessShown = songs);
-    }, onError: (_) {
-      // 预取失败只是没有封面，点击时会再取
-    });
+    f.then(
+      (songs) {
+        if (mounted && _guess == f) setState(() => _guessShown = songs);
+      },
+      onError: (_) {
+        // 预取失败只是没有封面，点击时会再取
+      },
+    );
   }
 
   Future<void> _start(RadioSource source, {Future<List<Song>>? first}) async {
@@ -491,10 +561,17 @@ class _RadioCardsState extends State<_RadioCards> {
     final overlay = Overlay.of(context, rootOverlay: true);
     final player = context.read<PlayerController>();
     try {
-      final batch = await first?.then<List<Song>?>((s) => s.isEmpty ? null : s, onError: (_) => null);
+      final batch = await first?.then<List<Song>?>(
+        (s) => s.isEmpty ? null : s,
+        onError: (_) => null,
+      );
       await player.playRadio(source, first: batch);
     } catch (e) {
-      Toast.show(overlay, l.radioFailed(errorText(l, e)), kind: ToastKind.error);
+      Toast.show(
+        overlay,
+        l.radioFailed(errorText(l, e)),
+        kind: ToastKind.error,
+      );
     }
   }
 
@@ -523,7 +600,11 @@ class _RadioCardsState extends State<_RadioCards> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (loggedIn) ...[
-          _GuessCard(title: l.radioGuessYouLike, song: next, onTap: _startGuess),
+          _GuessCard(
+            title: l.radioGuessYouLike,
+            song: next,
+            onTap: _startGuess,
+          ),
           const SizedBox(width: 12),
         ],
         if (feed.radarSeed.isNotEmpty) ...[
@@ -534,7 +615,9 @@ class _RadioCardsState extends State<_RadioCards> {
               coverUrl: feed.radarCover,
               // 每次点击从第 1 批开始，之后续取依次往后翻
               onTap: () => _start(
-                RadioSource.radar([for (final id in feed.radarSeed) id.toInt()]),
+                RadioSource.radar([
+                  for (final id in feed.radarSeed) id.toInt(),
+                ]),
               ),
             ),
           ),
@@ -547,7 +630,11 @@ class _RadioCardsState extends State<_RadioCards> {
 
 /// 猜你喜欢：比歌单卡宽一倍的长条，左边封面、右边歌名和歌手，下面跟歌单卡一样写入口名。
 class _GuessCard extends StatelessWidget {
-  const _GuessCard({required this.title, required this.song, required this.onTap});
+  const _GuessCard({
+    required this.title,
+    required this.song,
+    required this.onTap,
+  });
 
   final String title;
 
@@ -570,7 +657,10 @@ class _GuessCard extends StatelessWidget {
             Container(
               height: _cardWidth,
               clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(color: scheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(14)),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(14),
+              ),
               child: Row(
                 children: [
                   Cover(s?.coverUrl ?? '', size: _cardWidth, radius: 0),
@@ -584,7 +674,11 @@ class _GuessCard extends StatelessWidget {
                           s?.name ?? '',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, height: 1.3),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            height: 1.3,
+                          ),
                         ),
                         if (s != null) ...[
                           const SizedBox(height: 4),
@@ -592,7 +686,10 @@ class _GuessCard extends StatelessWidget {
                             singerNames(s),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: scheme.onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ],
@@ -600,7 +697,11 @@ class _GuessCard extends StatelessWidget {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(right: 12),
-                    child: Icon(Icons.play_circle_fill, size: 32, color: scheme.primary),
+                    child: Icon(
+                      Icons.play_circle_fill,
+                      size: 32,
+                      color: scheme.primary,
+                    ),
                   ),
                 ],
               ),
@@ -610,7 +711,11 @@ class _GuessCard extends StatelessWidget {
               title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, height: 1.35),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                height: 1.35,
+              ),
             ),
           ],
         ),

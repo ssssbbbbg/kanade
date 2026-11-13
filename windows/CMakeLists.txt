@@ -1,5 +1,8 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
+if(POLICY CMP0091)
+  cmake_policy(SET CMP0091 NEW)
+endif()
 project(kanade LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
@@ -57,6 +60,23 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
+  set(KANADE_NAC_MODEL "$ENV{KANADE_NAC_MODEL}")
+  if(NOT KANADE_NAC_MODEL)
+    set(local_nac_model "${CMAKE_CURRENT_SOURCE_DIR}/../android/app/nac-local/7187332.mnn")
+    if(EXISTS "${local_nac_model}")
+      set(KANADE_NAC_MODEL "${local_nac_model}")
+    endif()
+  endif()
+  if(KANADE_NAC_MODEL)
+    add_subdirectory("../native/nac" nac)
+    add_dependencies(${BINARY_NAME} kanade_nac)
+  endif()
+  # 360 Reality Audio speaker rendering; libmpegh is fetched at a pinned commit.
+  add_subdirectory("../native/ra360" ra360)
+  add_dependencies(${BINARY_NAME} kanade_ra360)
+endif()
+
 
 # === Installation ===
 # Support files are copied into place next to the executable, so that it can
@@ -80,6 +100,29 @@ install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}
 
 install(FILES "${FLUTTER_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
+
+if(TARGET kanade_nac)
+  get_target_property(nac_runtime kanade_nac KANADE_MNN_RUNTIME)
+  install(TARGETS kanade_nac RUNTIME DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    COMPONENT Runtime)
+  install(FILES "${nac_runtime}" "../native/nac/licenses/MNN-LICENSE.txt"
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}" COMPONENT Runtime)
+endif()
+
+if(TARGET kanade_ra360)
+  get_target_property(mpegh_license kanade_ra360 KANADE_MPEGH_LICENSE)
+  install(TARGETS kanade_ra360 RUNTIME DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    COMPONENT Runtime)
+  install(FILES "${mpegh_license}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    RENAME "libmpegh-LICENSE.txt" COMPONENT Runtime)
+endif()
+
+# Optional user-provided DTS:X decoder and its runtime DLLs (Git ignored).
+set(local_dts_runtime "${CMAKE_CURRENT_SOURCE_DIR}/dts-local/")
+if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64" AND EXISTS "${local_dts_runtime}DTSXDecoder.dll")
+  install(DIRECTORY "${local_dts_runtime}"
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}/dts-runtime" COMPONENT Runtime)
+endif()
 
 if(PLUGIN_BUNDLED_LIBRARIES)
   install(FILES "${PLUGIN_BUNDLED_LIBRARIES}"

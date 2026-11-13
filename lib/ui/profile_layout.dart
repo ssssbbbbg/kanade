@@ -60,7 +60,12 @@ class Pager<T> extends ChangeNotifier {
 
 /// [Pager] 的列表；滚到末尾那一格被建出来时自动取下一页。
 class PagedSliver<T> extends StatelessWidget {
-  const PagedSliver({super.key, required this.pager, required this.itemBuilder, this.emptyText});
+  const PagedSliver({
+    super.key,
+    required this.pager,
+    required this.itemBuilder,
+    this.emptyText,
+  });
 
   final Pager<T> pager;
   final Widget Function(BuildContext, List<T>, int) itemBuilder;
@@ -72,7 +77,9 @@ class PagedSliver<T> extends StatelessWidget {
       listenable: pager,
       builder: (context, _) => SliverList.builder(
         itemCount: pager.items.length + 1,
-        itemBuilder: (context, i) => i < pager.items.length ? itemBuilder(context, pager.items, i) : _footer(context),
+        itemBuilder: (context, i) => i < pager.items.length
+            ? itemBuilder(context, pager.items, i)
+            : _footer(context),
       ),
     );
   }
@@ -81,9 +88,17 @@ class PagedSliver<T> extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final error = pager.error;
     if (error != null) {
-      return ListTile(title: Text(l.loadFailed(errorText(l, error)), textAlign: TextAlign.center), onTap: pager.retry);
+      return ListTile(
+        title: Text(
+          l.loadFailed(errorText(l, error)),
+          textAlign: TextAlign.center,
+        ),
+        onTap: pager.retry,
+      );
     }
-    if (pager.hasMore && !pager.loading) WidgetsBinding.instance.addPostFrameCallback((_) => pager.more());
+    if (pager.hasMore && !pager.loading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => pager.more());
+    }
     if (pager.hasMore) {
       return const Padding(
         padding: EdgeInsets.all(16),
@@ -114,8 +129,14 @@ class PinnedBox extends SliverPersistentHeaderDelegate {
   double get maxExtent => height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) =>
-      ColoredBox(color: Theme.of(context).colorScheme.surface, child: SizedBox.expand(child: child));
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) => ColoredBox(
+    color: Theme.of(context).colorScheme.surface,
+    child: SizedBox.expand(child: child),
+  );
 
   @override
   bool shouldRebuild(PinnedBox old) => true;
@@ -123,10 +144,16 @@ class PinnedBox extends SliverPersistentHeaderDelegate {
 
 /// 一排横向滑动的切换胶囊。
 class PillRow extends StatelessWidget {
-  const PillRow({super.key, required this.children, this.padding = const EdgeInsets.symmetric(horizontal: 20)});
+  const PillRow({
+    super.key,
+    required this.children,
+    this.padding = const EdgeInsets.symmetric(horizontal: 20),
+    this.spacing = 6,
+  });
 
   final List<Widget> children;
   final EdgeInsetsGeometry padding;
+  final double spacing;
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
@@ -134,7 +161,10 @@ class PillRow extends StatelessWidget {
     padding: padding,
     child: Row(
       children: [
-        for (var i = 0; i < children.length; i++) ...[if (i > 0) const SizedBox(width: 6), children[i]],
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0) SizedBox(width: spacing),
+          children[i],
+        ],
       ],
     ),
   );
@@ -158,7 +188,8 @@ class PinFiller extends LeafRenderObjectWidget {
   final double pinnedAbove;
 
   @override
-  RenderObject createRenderObject(BuildContext context) => RenderPinFiller(marker, pinnedAbove);
+  RenderObject createRenderObject(BuildContext context) =>
+      RenderPinFiller(marker, pinnedAbove);
 
   @override
   void updateRenderObject(BuildContext context, RenderPinFiller renderObject) {
@@ -178,9 +209,16 @@ class RenderPinFiller extends RenderSliver {
   @override
   void performLayout() {
     // 标记在前面，这一轮已经排好了
-    final start = (marker.currentContext?.findRenderObject() as RenderSliver?)?.constraints.precedingScrollExtent;
-    final content = constraints.precedingScrollExtent - (start ?? constraints.precedingScrollExtent);
-    final extent = math.max(0.0, constraints.viewportMainAxisExtent - pinnedAbove - content);
+    final start = (marker.currentContext?.findRenderObject() as RenderSliver?)
+        ?.constraints
+        .precedingScrollExtent;
+    final content =
+        constraints.precedingScrollExtent -
+        (start ?? constraints.precedingScrollExtent);
+    final extent = math.max(
+      0.0,
+      constraints.viewportMainAxisExtent - pinnedAbove - content,
+    );
     geometry = SliverGeometry(
       scrollExtent: extent,
       paintExtent: calculatePaintOffset(constraints, from: 0, to: extent),

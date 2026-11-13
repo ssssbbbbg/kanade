@@ -1,0 +1,5 @@
+.section .rodata
+.global kanade_ra360_hrtf
+.hidden kanade_ra360_hrtf
+kanade_ra360_hrtf:
+.incbin "@hrtf@"
