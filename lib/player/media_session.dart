@@ -79,6 +79,12 @@ class MediaSession {
   final _clock = Stopwatch();
 
   /// 在支持的平台上接入系统媒体控件，其他平台什么都不做。失败只影响系统卡片，不影响播放。
+  ///
+  /// Android 和 iOS 共用 [_AndroidSink]：`audio_service` 的 Darwin 实现在
+  /// darwin/audio_service/Sources/audio_service/AudioServicePlugin.m 里自己处理
+  /// AVAudioSession、MPNowPlayingInfoCenter 和 MPRemoteCommandCenter，
+  /// 锁屏卡片、控制中心、耳机与蓝牙的播放/切歌键都经过它。Android 专用的
+  /// `androidNotification*` 配置在 iOS 上会被忽略。
   static Future<void> attach(
     PlayerController p,
     LibraryController library,
@@ -86,7 +92,7 @@ class MediaSession {
   ) async {
     try {
       final _Sink? sink;
-      if (Platform.isAndroid) {
+      if (Platform.isAndroid || Platform.isIOS) {
         sink = await _AndroidSink.create(p, () => _toggleLike(p, library));
       } else if (Platform.isWindows) {
         sink = await _WindowsSink.create(p, locale);
